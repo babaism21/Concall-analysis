@@ -1,12 +1,41 @@
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+function loadEnvFile() {
+  const envPath = join(ROOT, ".env");
+  if (!existsSync(envPath)) return;
+  for (const line of readFileSync(envPath, "utf8").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq < 0) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let val = trimmed.slice(eq + 1).trim();
+    if (
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ) {
+      val = val.slice(1, -1);
+    }
+    if (!(key in process.env)) process.env[key] = val;
+  }
+}
+
+loadEnvFile();
+
 export const DATA_DIR = join(ROOT, "data");
 export const PDF_DIR = join(DATA_DIR, "pdfs");
+export const BLOB_DIR = join(DATA_DIR, "blobs", "pdfs");
 export const DB_PATH = join(DATA_DIR, "concall.db");
+
+export const DATABASE_URL =
+  process.env.DATABASE_URL ?? "postgresql://concall:concall@localhost:5432/concall";
+
+export const USE_POSTGRES =
+  process.env.USE_POSTGRES === "true" || process.env.USE_POSTGRES === "1";
 export const PUBLIC_DIR = join(ROOT, "public");
 export const EXAMPLES_DIR = join(ROOT, "examples");
 export const ROOT_DIR = ROOT;
@@ -38,4 +67,5 @@ export const LLM_TOTAL_CHAR_BUDGET = Number(process.env.LLM_TOTAL_CHAR_BUDGET ??
 
 export function ensureDataDirs() {
   mkdirSync(PDF_DIR, { recursive: true });
+  mkdirSync(BLOB_DIR, { recursive: true });
 }

@@ -3,6 +3,9 @@ import { readFileSync, existsSync } from "node:fs";
 import { join, extname } from "node:path";
 import { PORT, PUBLIC_DIR } from "../config.ts";
 import { analyzeSymbol, getAnalysis } from "../analyze/run.ts";
+import { refreshSymbol } from "../ingest/refresh.ts";
+import { getStock, stockToUiPayload } from "./v1/stocks.ts";
+import { isPostgresEnabled, pingPostgres } from "../db/pg.ts";
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -49,6 +52,25 @@ export function startServer(port = PORT) {
         return;
       }
 
+      const stockMatch = pathname.match(/^\/v1\/stocks\/([A-Za-z0-9._-]+)$/);
+      if (req.method === "GET" && stockMatch) {
+        const stock = await getStock(stockMatch[1]);
+        if (stock.status === "not_found") {
+          sendJson(res, 404, { symbol: stock.symbol, status: "not_found", error: "not_found" });
+          return;
+        }
+        sendJson(res, 200, stockToUiPayload(stock));
+        return;
+      }
+
+      const refreshMatch = pathname.match(/^\/refresh\/([A-Za-z0-9._-]+)$/);
+      if (req.method === "POST" && refreshMatch) {
+        const force = url.searchParams.get("force") === "1";
+        const result = await refreshSymbol(refreshMatch[1], { forceReparse: force });
+        sendJson(res, 200, result);
+        return;
+      }
+
       const analyzeMatch = pathname.match(/^\/analyze\/([A-Za-z0-9._-]+)$/);
       if (req.method === "POST" && analyzeMatch) {
         const force = url.searchParams.get("force") === "1";
@@ -59,7 +81,7 @@ export function startServer(port = PORT) {
 
       const getMatch = pathname.match(/^\/analysis\/([A-Za-z0-9._-]+)$/);
       if (req.method === "GET" && getMatch) {
-        const cached = getAnalysis(getMatch[1]);
+        const cached = await getAnalysis(getMatch[1]);
         if (!cached) {
           sendJson(res, 404, { error: "not_cached", symbol: getMatch[1].toUpperCase() });
           return;
@@ -69,7 +91,8 @@ export function startServer(port = PORT) {
       }
 
       if (req.method === "GET" && pathname === "/health") {
-        sendJson(res, 200, { ok: true });
+        const pgOk = isPostgresEnabled() ? await pingPostgres() : false;
+        sendJson(res, 200, { ok: true, postgres: pgOk, usePostgres: isPostgresEnabled() });
         return;
       }
 
@@ -88,7 +111,10 @@ export function startServer(port = PORT) {
 
   server.listen(port, () => {
     console.log(`[api] listening on http://localhost:${port}`);
-    console.log(`[api] POST /analyze/:symbol   GET /analysis/:symbol`);
+    console.log(
+      `[api] GET /v1/stocks/:symbol  POST /refresh/:symbol  POST /analyze/:symbol  GET /analysis/:symbol`
+    );
+    console.log(`[api] USE_POSTGRES=${isPostgresEnabled()}`);
   });
   return server;
 }

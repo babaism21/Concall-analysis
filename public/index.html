@@ -595,7 +595,7 @@
                   `<option value="${i}">${escapeHtml(t.fyQuarter)} · ${escapeHtml(t.callDate)}</option>`
               )
               .join("")
-          : `<option value="">No local transcripts — run Check for updates once</option>`;
+          : `<option value="">No transcripts — click Check for updates</option>`;
 
         el("txSelect").onchange = () => {
           const val = el("txSelect").value;
@@ -629,7 +629,7 @@
           el("txHint").textContent = "All quarters — click a card to jump inside the transcript panel.";
         } else {
           el("transcript").textContent =
-            "Transcripts not on this machine yet. Click Check for updates to fetch PDFs, then click a card.";
+            "Transcripts not loaded yet. Click Check for updates to fetch PDFs from BSE.";
         }
       }
 
@@ -764,19 +764,32 @@
         renderTxSelect();
       }
 
+      function mapStockResponse(data) {
+        if (data.portfolioJson) return data;
+        return data;
+      }
+
       async function run(mode) {
         const symbol = el("symbol").value.trim().toUpperCase();
         if (!symbol) return;
         el("err").textContent = "";
         el("f").querySelectorAll("button").forEach((b) => (b.disabled = true));
         try {
-          const res =
-            mode === "show"
-              ? await fetch("/analysis/" + encodeURIComponent(symbol))
-              : await fetch("/analyze/" + encodeURIComponent(symbol) + "?force=1", { method: "POST" });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || res.statusText);
-          renderAll(data);
+          if (mode === "show") {
+            const res = await fetch("/v1/stocks/" + encodeURIComponent(symbol));
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || res.statusText);
+            renderAll(mapStockResponse(data));
+          } else {
+            const res = await fetch("/refresh/" + encodeURIComponent(symbol), { method: "POST" });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || res.statusText);
+            const showRes = await fetch("/v1/stocks/" + encodeURIComponent(symbol));
+            const showData = await showRes.json();
+            if (showRes.ok) renderAll(mapStockResponse(showData));
+            else if (state.data?.portfolioJson) renderAll(state.data);
+            else throw new Error(showData.error || "No analysis cached yet — run Analyze first");
+          }
         } catch (e) {
           el("err").textContent = e.message || String(e);
         } finally {
