@@ -141,11 +141,11 @@
   <body>
     <main>
       <h1>Management Health</h1>
-      <p class="sub">Guidance vs delivery from the last ~8 earnings calls.</p>
+      <p class="sub">Analyze once, then reuse until a newer concall appears.</p>
       <form id="f">
-        <input id="symbol" placeholder="HDFCBANK" required />
-        <button type="submit">Analyze</button>
-        <button type="button" class="secondary" id="cacheBtn">Load cache</button>
+        <input id="symbol" placeholder="HDFCBANK" value="HDFCBANK" required />
+        <button type="submit" id="showBtn">Show</button>
+        <button type="button" class="secondary" id="updateBtn">Check for updates</button>
       </form>
       <div id="out"></div>
       <p class="err" id="err"></p>
@@ -154,7 +154,7 @@
       const out = document.getElementById("out");
       const err = document.getElementById("err");
       const form = document.getElementById("f");
-      const cacheBtn = document.getElementById("cacheBtn");
+      const updateBtn = document.getElementById("updateBtn");
 
       function render(data) {
         err.textContent = "";
@@ -175,12 +175,17 @@
             (t) => `<div class="t-item"><strong>${escapeHtml(t.quarter)}</strong><span>${t.score}</span><span>${escapeHtml(t.note)}</span></div>`
           )
           .join("");
+        const statusBits = [
+          data.cacheHit ? "cached" : "fresh",
+          data.source || "",
+          data.updateAvailable ? "newer concall available — set API key to refresh" : "",
+        ].filter(Boolean);
         out.innerHTML = `
           <div class="score-row">
             <div class="gauge ${escapeHtml(j.label)}">${j.healthScore}</div>
             <div>
               <div><strong>${escapeHtml(j.symbol)}</strong> — ${escapeHtml(j.label)}</div>
-              <div class="meta">LLM timeline avg: ${j.rawScore ?? "—"} · ${j.transcriptCount} transcripts · cache ${data.cacheHit ? "hit" : "miss"}</div>
+              <div class="meta">LLM timeline avg: ${j.rawScore ?? "—"} · ${j.transcriptCount} transcripts · ${escapeHtml(statusBits.join(" · "))}</div>
               <p>${escapeHtml(j.summary || "")}</p>
             </div>
           </div>
@@ -205,7 +210,7 @@
           .replaceAll(">", "&gt;");
       }
 
-      async function analyze(forceCacheOnly) {
+      async function run(mode) {
         const symbol = document.getElementById("symbol").value.trim().toUpperCase();
         if (!symbol) return;
         err.textContent = "";
@@ -213,9 +218,11 @@
         form.querySelectorAll("button").forEach((b) => (b.disabled = true));
         try {
           let res;
-          if (forceCacheOnly) {
+          if (mode === "show") {
+            // Read-only: SQLite cache or bundled examples — never calls LLM
             res = await fetch("/analysis/" + encodeURIComponent(symbol));
           } else {
+            // Discover newest concall; reuse cache if unchanged; LLM only if new/forced
             res = await fetch("/analyze/" + encodeURIComponent(symbol), { method: "POST" });
           }
           const data = await res.json();
@@ -231,9 +238,11 @@
 
       form.addEventListener("submit", (e) => {
         e.preventDefault();
-        analyze(false);
+        run("show");
       });
-      cacheBtn.addEventListener("click", () => analyze(true));
+      updateBtn.addEventListener("click", () => run("update"));
+      // Auto-show bundled/cached HDFCBANK on load
+      run("show");
     </script>
   </body>
 </html>

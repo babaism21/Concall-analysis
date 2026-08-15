@@ -1,4 +1,6 @@
-import { MODEL_ID, PROMPT_VERSION, TRANSCRIPT_CHAR_CAP } from "../config.ts";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { EXAMPLES_DIR, MODEL_ID, PROMPT_VERSION, TRANSCRIPT_CHAR_CAP } from "../config.ts";
 import { getDb, nowIso } from "../db.ts";
 import { getLlmClient } from "../llm.ts";
 import { ingestSymbol, loadParsedTranscripts } from "../ingest/run.ts";
@@ -29,6 +31,10 @@ export type AnalysisRecord = {
   createdAt: string;
   updatedAt: string;
   cacheHit: boolean;
+  /** db = SQLite cache, example = bundled sample, fresh = just analyzed */
+  source?: "db" | "example" | "fresh";
+  /** True when a newer concall exists but we returned older cache (no API key / not forced). */
+  updateAvailable?: boolean;
 };
 
 function getCached(symbol: string): AnalysisRecord | null {
@@ -58,6 +64,49 @@ function getCached(symbol: string): AnalysisRecord | null {
     ...row,
     portfolioJson: JSON.parse(row.portfolioJson) as PortfolioJson,
     cacheHit: true,
+    source: "db",
+  };
+}
+
+/** Bundled sample under examples/{SYMBOL}.json (+ optional .md). No API key. */
+function loadExample(symbol: string): AnalysisRecord | null {
+  const sym = symbol.trim().toUpperCase();
+  const jsonPath = join(EXAMPLES_DIR, `${sym}.json`);
+  if (!existsSync(jsonPath)) return null;
+  const raw = JSON.parse(readFileSync(jsonPath, "utf8")) as PortfolioJson & {
+    latestSourceUrl?: string;
+  };
+  const mdPath = join(EXAMPLES_DIR, `${sym}.md`);
+  const markdown = existsSync(mdPath)
+    ? readFileSync(mdPath, "utf8")
+    : `# ${sym}\n\nBundled example analysis.`;
+  const latestSourceUrl = raw.latestSourceUrl ?? null;
+  const ts = raw.scoredAt || nowIso();
+  const portfolioJson: PortfolioJson = {
+    symbol: sym,
+    healthScore: Number(raw.healthScore ?? 0),
+    label: raw.label ?? "Weak",
+    rawScore: raw.rawScore ?? null,
+    redFlags: raw.redFlags ?? [],
+    commitments: raw.commitments ?? [],
+    timeline: raw.timeline ?? [],
+    summary: raw.summary ?? "",
+    transcriptCount: Number(raw.transcriptCount ?? 0),
+    latestSourceUrl,
+    scoredAt: ts,
+  };
+  return {
+    symbol: sym,
+    markdown,
+    portfolioJson,
+    latestSourceUrl,
+    transcriptCount: portfolioJson.transcriptCount,
+    modelId: "example",
+    promptVersion: "example",
+    createdAt: ts,
+    updatedAt: ts,
+    cacheHit: true,
+    source: "example",
   };
 }
 
@@ -177,19 +226,57 @@ export async function analyzeSymbol(
   const sym = symbol.trim().toUpperCase();
   console.log(`[analyze] start ${sym} force=${Boolean(opts.force)}`);
 
+  // Prefer existing DB/example before network — Show path should not need this,
+  // but Update still discovers newest URL via ingest.
+  let cached = getCached(sym);
+  if (!cached) {
+    const example = loadExample(sym);
+    if (example) {
+      saveAnalysis(example);
+      cached = { ...example, source: "db", cacheHit: true };
+      console.log(`[analyze] seeded DB from examples/${sym}.json`);
+    }
+  }
+
   const ingest = await ingestSymbol(sym);
   const transcripts = loadParsedTranscripts(sym);
+  const latestUrl = transcripts[0]?.sourceUrl ?? ingest.latestSourceUrl;
+
   if (!transcripts.length) {
+    if (cached) {
+      console.log(`[analyze] no transcripts; returning prior cache for ${sym}`);
+      return { ...cached, cacheHit: true, updateAvailable: false };
+    }
     throw new Error(`No parsed transcripts for ${sym} (discovered=${ingest.discovered})`);
   }
 
-  const latestUrl = transcripts[0].sourceUrl;
-  const cached = getCached(sym);
-  if (!opts.force && cached && cached.latestSourceUrl === latestUrl) {
-    console.log(`[analyze] cache hit ${sym}`);
-    return cached;
+  // Same newest concall as last analysis → return cache (no LLM, no API key).
+  if (
+    !opts.force &&
+    cached &&
+    cached.latestSourceUrl &&
+    cached.latestSourceUrl === latestUrl
+  ) {
+    console.log(`[analyze] cache hit ${sym} (no new concall)`);
+    return { ...cached, cacheHit: true, updateAvailable: false, source: "db" };
   }
-  console.log(`[analyze] cache miss ${sym}`);
+
+  const needsLlm = true;
+  if (needsLlm && !process.env.OPENROUTER_API_KEY) {
+    if (cached) {
+      console.log(
+        `[analyze] update available for ${sym} but no OPENROUTER_API_KEY — returning stale cache`
+      );
+      return { ...cached, cacheHit: true, updateAvailable: true, source: "db" };
+    }
+    throw new Error(
+      "No saved analysis yet. Set OPENROUTER_API_KEY in .env to run the first analysis (then it is cached until a new concall)."
+    );
+  }
+
+  console.log(
+    `[analyze] cache miss ${sym} — running LLM (force=${Boolean(opts.force)} priorUrl=${cached?.latestSourceUrl ?? "none"} newUrl=${latestUrl})`
+  );
 
   const { markdown, extracted } = await runLlmHealthcheck(
     sym,
@@ -254,7 +341,7 @@ export async function analyzeSymbol(
   };
 
   const createdAt = cached?.createdAt ?? nowIso();
-  const record: Omit<AnalysisRecord, "cacheHit"> = {
+  const record: Omit<AnalysisRecord, "cacheHit" | "source" | "updateAvailable"> = {
     symbol: sym,
     markdown,
     portfolioJson,
@@ -269,9 +356,22 @@ export async function analyzeSymbol(
   console.log(
     `[analyze] saved ${sym} score=${healthScore} (${label}) commitments=${commitments.length}`
   );
-  return { ...record, cacheHit: false };
+  return { ...record, cacheHit: false, source: "fresh", updateAvailable: false };
 }
 
+/**
+ * Read-only. Never calls the LLM.
+ * Order: SQLite → bundled examples/{SYMBOL}.json (seeded into DB on hit).
+ */
 export function getAnalysis(symbol: string): AnalysisRecord | null {
-  return getCached(symbol.trim().toUpperCase());
+  const sym = symbol.trim().toUpperCase();
+  const cached = getCached(sym);
+  if (cached) return cached;
+
+  const example = loadExample(sym);
+  if (!example) return null;
+
+  saveAnalysis(example);
+  console.log(`[analyze] seeded DB from examples/${sym}.json (get)`);
+  return { ...getCached(sym)!, source: "example", cacheHit: true };
 }

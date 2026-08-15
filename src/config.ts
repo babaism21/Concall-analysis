@@ -8,6 +8,8 @@ export const DATA_DIR = join(ROOT, "data");
 export const PDF_DIR = join(DATA_DIR, "pdfs");
 export const DB_PATH = join(DATA_DIR, "concall.db");
 export const PUBLIC_DIR = join(ROOT, "public");
+export const EXAMPLES_DIR = join(ROOT, "examples");
+export const ROOT_DIR = ROOT;
 
 export const OPENROUTER_BASE_URL =
   process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1";

@@ -19,16 +19,16 @@ Not a full research chat app. Not coupled to any portfolio OS.
 npm install
 cp .env.example .env   # set OPENROUTER_API_KEY
 
-# One-symbol end-to-end
+# One-symbol end-to-end (first time only — needs API key)
 npm run analyze -- HDFCBANK
 
-# Read cache only
+# Read cache only (no API key)
 npm run get -- HDFCBANK
 
-# API + UI
+# API + UI — Show uses cache/examples; Check for updates reuses cache if unchanged
 npm run serve
-# POST http://localhost:8787/analyze/HDFCBANK
 # GET  http://localhost:8787/analysis/HDFCBANK
+# POST http://localhost:8787/analyze/HDFCBANK
 # UI   http://localhost:8787/
 ```
 
@@ -62,13 +62,20 @@ Headline score = deterministic from commitments. LLM also returns a quarterly ti
 
 ## Cache rule
 
-Analysis is reused until the newest discovered transcript `source_url` changes for that symbol.
+**Analyze once → reuse until a newer concall appears.**
+
+| Action | API | LLM? | API key? |
+|--------|-----|------|----------|
+| **Show** | `GET /analysis/:symbol` | Never | No |
+| **Check for updates** | `POST /analyze/:symbol` | Only if newest transcript URL changed (or `?force=1`) | Only when LLM runs |
+
+`GET` order: SQLite `data/concall.db` → bundled `examples/{SYMBOL}.json` (then seeded into SQLite).
 
 ## Env
 
 | Var | Required | Default |
 |-----|----------|---------|
-| `OPENROUTER_API_KEY` | yes (analyze) | — |
+| `OPENROUTER_API_KEY` | only for first analyze / when a newer concall appears | — |
 | `MODEL_ID` | no | `anthropic/claude-sonnet-5` |
 | `PORT` | no | `8787` |
 | `MAX_TRANSCRIPTS` | no | `8` |
@@ -96,5 +103,6 @@ Full dump: [`examples/HDFCBANK.json`](examples/HDFCBANK.json) · [`examples/HDFC
 | Deterministic score | ✅ |
 | SQLite cache + API | ✅ |
 | Minimal UI | ✅ |
+| Cache until new concall | ✅ |
 | Portfolio rollup | ⏳ next |
 | Quote grounding verify | ⏳ later |
