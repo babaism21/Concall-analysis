@@ -9,14 +9,17 @@
     "analyze": "tsx src/cli.ts analyze",
     "get": "tsx src/cli.ts get",
     "serve": "tsx src/cli.ts serve",
-    "dev": "tsx src/cli.ts serve"
+    "dev": "tsx src/cli.ts serve",
+    "migrate:pg": "tsx src/cli.ts migrate:pg"
   },
   "dependencies": {
     "openai": "^4.77.0",
-    "pdf-parse": "^1.1.1"
+    "pdf-parse": "^1.1.1",
+    "pg": "^8.13.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
+    "@types/pg": "^8.11.10",
     "@types/pdf-parse": "^1.1.4",
     "tsx": "^4.20.3",
     "typescript": "^5.7.0"

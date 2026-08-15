@@ -3,7 +3,9 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ingestSymbol } from "./ingest/run.ts";
 import { analyzeSymbol, getAnalysis } from "./analyze/run.ts";
+import { refreshSymbol } from "./ingest/refresh.ts";
 import { startServer } from "./api/server.ts";
+import { migrateSqliteToPostgres } from "./db/migrate.ts";
 
 function loadEnv() {
   const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -33,6 +35,7 @@ function usage() {
   npm run analyze -- SYMBOL [--force]
   npm run get -- SYMBOL
   npm run serve
+  npm run migrate:pg
 `);
 }
 
@@ -56,6 +59,11 @@ async function main() {
 
   if (cmd === "serve") {
     startServer();
+    return;
+  }
+
+  if (cmd === "migrate:pg") {
+    await migrateSqliteToPostgres();
     return;
   }
 
@@ -100,7 +108,7 @@ async function main() {
   }
 
   if (cmd === "get") {
-    const cached = getAnalysis(symbol);
+    const cached = await getAnalysis(symbol);
     if (!cached) {
       console.error(`No cached analysis for ${symbol.toUpperCase()}`);
       process.exit(2);

@@ -4,6 +4,9 @@ import { EXAMPLES_DIR, MODEL_ID, PROMPT_VERSION, LLM_TOTAL_CHAR_BUDGET } from ".
 import { getDb, nowIso } from "../db.ts";
 import { getLlmClient } from "../llm.ts";
 import { ingestSymbol, loadParsedTranscripts } from "../ingest/run.ts";
+import { syncSymbolToPostgres } from "../db/sync.ts";
+import { getStockFromPg, isPostgresEnabled } from "../db/pg.ts";
+import { stockToAnalysisRecord } from "../db/read.ts";
 import {
   HEALTHCHECK_SYSTEM,
   JSON_EXTRACT_SYSTEM,
@@ -22,33 +25,7 @@ import {
   parseRedFlagsFromMarkdown,
   scoreFromCommitments,
 } from "./score.ts";
-
-export type TranscriptPayload = {
-  callDate: string;
-  fyQuarter: string;
-  sourceUrl: string;
-  text: string;
-  charCount: number;
-};
-
-export type AnalysisRecord = {
-  symbol: string;
-  markdown: string;
-  portfolioJson: PortfolioJson;
-  latestSourceUrl: string | null;
-  transcriptCount: number;
-  modelId: string | null;
-  promptVersion: string | null;
-  createdAt: string;
-  updatedAt: string;
-  cacheHit: boolean;
-  /** db = SQLite cache, example = bundled sample, fresh = just analyzed */
-  source?: "db" | "example" | "fresh";
-  /** True when a newer concall exists but we returned older cache (no API key / not forced). */
-  updateAvailable?: boolean;
-  /** Attached at read time for deep-linking (not always persisted). */
-  transcripts?: TranscriptPayload[];
-};
+import type { AnalysisRecord, TranscriptPayload } from "../types.ts";
 
 function getCached(symbol: string): AnalysisRecord | null {
   const db = getDb();
@@ -470,6 +447,12 @@ export async function analyzeSymbol(
     updatedAt: nowIso(),
   };
   saveAnalysis(record);
+  try {
+    await syncSymbolToPostgres(sym);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[analyze] Postgres sync failed for ${sym}: ${msg}`);
+  }
   console.log(
     `[analyze] saved ${sym} score=${healthScore} (${label}) commitments=${commitments.length} insights=${insights.length}`
   );
@@ -483,11 +466,23 @@ export async function analyzeSymbol(
 
 /**
  * Read-only. Never calls the LLM.
- * Order: SQLite → bundled examples/{SYMBOL}.json (seeded into DB on hit).
- * Always attaches transcript texts + quote char offsets when PDFs are parsed locally.
+ * Order: Postgres (when enabled) → SQLite → bundled examples.
+ * Always attaches transcript texts + quote char offsets.
  */
-export function getAnalysis(symbol: string): AnalysisRecord | null {
+export async function getAnalysis(symbol: string): Promise<AnalysisRecord | null> {
   const sym = symbol.trim().toUpperCase();
+
+  if (isPostgresEnabled()) {
+    try {
+      const stock = await getStockFromPg(sym);
+      const rec = stockToAnalysisRecord(stock);
+      if (rec) return rec;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[analyze] Postgres read failed, falling back to SQLite: ${msg}`);
+    }
+  }
+
   let cached = getCached(sym);
   if (!cached) {
     const example = loadExample(sym);
@@ -495,6 +490,11 @@ export function getAnalysis(symbol: string): AnalysisRecord | null {
     saveAnalysis(example);
     console.log(`[analyze] seeded DB from examples/${sym}.json (get)`);
     cached = { ...getCached(sym)!, source: "example", cacheHit: true };
+    try {
+      await syncSymbolToPostgres(sym);
+    } catch {
+      /* best effort */
+    }
   }
   return withTranscripts(cached);
 }
