@@ -3,56 +3,78 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Concall Analysis — Management Health</title>
+    <title>Concall Analysis — Promised vs Delivered</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
     <style>
       :root {
-        --bg: #0f1419;
-        --panel: #1a222c;
-        --text: #e7ecf1;
+        --bg: #0c1014;
+        --panel: #151b22;
+        --panel2: #1b232d;
+        --text: #e8eef4;
         --muted: #8b9aab;
-        --accent: #3d9cf0;
+        --accent: #4aa3f0;
         --good: #3ecf8e;
         --avg: #e6b84d;
         --weak: #e57373;
+        --open: #7aa2ff;
+        --risk: #f0a060;
         --border: #2a3542;
+        --mark: #5c3d12;
+        --mark-text: #ffd59a;
       }
       * { box-sizing: border-box; }
-      body {
+      html, body {
         margin: 0;
-        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        font-family: "DM Sans", system-ui, sans-serif;
         background:
-          radial-gradient(1200px 600px at 10% -10%, #1b3a55 0%, transparent 55%),
-          radial-gradient(900px 500px at 100% 0%, #243248 0%, transparent 50%),
+          radial-gradient(1000px 520px at 0% -10%, #1a3348 0%, transparent 55%),
+          radial-gradient(800px 480px at 100% 0%, #1f2a22 0%, transparent 45%),
           var(--bg);
         color: var(--text);
-        min-height: 100vh;
       }
-      main {
-        max-width: 920px;
+      .shell {
+        max-width: 1280px;
         margin: 0 auto;
-        padding: 48px 20px 80px;
+        padding: 16px 18px 12px;
+        height: 100vh;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
       }
       h1 {
-        font-family: "IBM Plex Serif", Georgia, serif;
-        font-weight: 600;
-        font-size: 2rem;
-        margin: 0 0 8px;
+        font-family: "Instrument Serif", Georgia, serif;
+        font-weight: 400;
+        font-size: 1.85rem;
+        margin: 0 0 4px;
         letter-spacing: -0.02em;
+        flex-shrink: 0;
       }
-      .sub { color: var(--muted); margin-bottom: 28px; }
-      form {
+      .sub { color: var(--muted); margin: 0 0 12px; font-size: 0.9rem; flex-shrink: 0; }
+      .top {
         display: flex;
-        gap: 10px;
+        gap: 12px;
         flex-wrap: wrap;
-        margin-bottom: 28px;
+        align-items: center;
+        margin-bottom: 12px;
+        flex-shrink: 0;
       }
       input {
         flex: 1;
-        min-width: 160px;
+        min-width: 140px;
         background: var(--panel);
         border: 1px solid var(--border);
         color: var(--text);
-        border-radius: 8px;
+        border-radius: 10px;
         padding: 12px 14px;
         font-size: 1rem;
         text-transform: uppercase;
@@ -61,187 +83,712 @@
         background: var(--accent);
         color: #041018;
         border: 0;
-        border-radius: 8px;
-        padding: 12px 18px;
+        border-radius: 10px;
+        padding: 12px 16px;
         font-weight: 600;
         cursor: pointer;
+        font-family: inherit;
       }
       button.secondary {
         background: transparent;
         color: var(--text);
         border: 1px solid var(--border);
       }
-      button:disabled { opacity: 0.6; cursor: wait; }
+      button:disabled { opacity: 0.55; cursor: wait; }
       .score-row {
         display: flex;
-        gap: 24px;
+        gap: 18px;
         align-items: center;
         background: var(--panel);
         border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
+        border-radius: 14px;
+        padding: 12px 16px;
+        margin-bottom: 12px;
+        flex-shrink: 0;
       }
       .gauge {
-        width: 96px;
-        height: 96px;
+        width: 72px;
+        height: 72px;
         border-radius: 50%;
         display: grid;
         place-items: center;
-        font-size: 1.6rem;
+        font-size: 1.35rem;
         font-weight: 700;
-        border: 4px solid var(--border);
+        border: 3px solid var(--border);
+        flex-shrink: 0;
       }
       .gauge.Good { border-color: var(--good); color: var(--good); }
       .gauge.Average { border-color: var(--avg); color: var(--avg); }
       .gauge.Weak { border-color: var(--weak); color: var(--weak); }
-      .meta { color: var(--muted); font-size: 0.92rem; }
-      h2 { font-size: 1.05rem; margin: 24px 0 10px; }
-      ul { margin: 0; padding-left: 18px; }
-      li { margin: 6px 0; }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.92rem;
-      }
-      th, td {
-        text-align: left;
-        padding: 10px 8px;
-        border-bottom: 1px solid var(--border);
-        vertical-align: top;
-      }
-      th { color: var(--muted); font-weight: 500; }
-      .err { color: var(--weak); margin-top: 12px; }
-      .timeline {
+      .meta { color: var(--muted); font-size: 0.88rem; }
+      .layout {
         display: grid;
-        gap: 8px;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 14px;
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 0; /* force flex child to take remaining viewport — enables inner scroll */
+        align-items: stretch;
       }
-      .t-item {
-        display: grid;
-        grid-template-columns: 90px 40px 1fr;
-        gap: 10px;
+      @media (max-width: 960px) {
+        html, body { overflow: auto; height: auto; }
+        .shell { height: auto; overflow: auto; }
+        .layout { grid-template-columns: 1fr; height: auto; min-height: 70vh; }
+      }
+      .col {
         background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
+        max-height: 100%;
+      }
+      .col.transcript-col {
+        position: sticky;
+        top: 0;
+      }
+      .col-h {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+        background: var(--panel);
+      }
+      .col-h h2 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+      .chip {
+        border: 1px solid var(--border);
+        background: var(--panel2);
+        color: var(--muted);
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 0.78rem;
+        cursor: pointer;
+      }
+      .chip.on { color: var(--text); border-color: var(--accent); background: #1a2a3a; }
+      .chip .n {
+        display: inline-block;
+        margin-left: 4px;
+        opacity: 0.75;
+      }
+      .cards {
+        padding: 10px;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 1;
+        min-height: 0;
+      }
+      .card {
+        text-align: left;
+        background: var(--panel2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px 12px 10px;
+        cursor: pointer;
+        color: inherit;
+        font: inherit;
+        width: 100%;
+      }
+      .card:hover, .card.active {
+        border-color: var(--accent);
+        background: #1a2836;
+      }
+      .card .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: baseline;
+        margin-bottom: 6px;
+      }
+      .tag {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border-radius: 999px;
+      }
+      .tag.delivered { background: #163528; color: var(--good); }
+      .tag.missed { background: #3a1c1c; color: var(--weak); }
+      .tag.open { background: #1c2740; color: var(--open); }
+      .tag.risk { background: #3a2818; color: var(--risk); }
+      .tag.guidance { background: #243040; color: var(--accent); }
+      .qtr { color: var(--muted); font-size: 0.78rem; }
+      .card strong { display: block; font-size: 0.92rem; margin-bottom: 4px; }
+      .card p { margin: 0; color: var(--muted); font-size: 0.84rem; line-height: 1.4; }
+      .card .jump {
+        margin-top: 8px;
+        color: var(--accent);
+        font-size: 0.78rem;
+        font-weight: 600;
+      }
+      .tx-tools {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .tx-tools select {
+        background: var(--panel2);
+        color: var(--text);
         border: 1px solid var(--border);
         border-radius: 8px;
-        padding: 10px 12px;
+        padding: 6px 8px;
+        max-width: 220px;
+      }
+      .transcript {
+        flex: 1 1 auto;
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding: 14px 16px 40px;
+        white-space: pre-wrap;
+        font-size: 0.88rem;
+        line-height: 1.55;
+        color: #c9d4e0;
+        min-height: 0;
+        position: relative;
+      }
+      .transcript mark.passage {
+        background: rgba(92, 61, 18, 0.55);
+        color: var(--mark-text);
+        padding: 0 2px;
+        border-radius: 4px;
+        box-decoration-break: clone;
+        -webkit-box-decoration-break: clone;
+      }
+      .transcript mark.core {
+        background: #8a5a12;
+        color: #ffe6b0;
+        padding: 0 1px;
+        border-radius: 2px;
+      }
+      .transcript mark#hit {
+        outline: 1px solid rgba(230, 184, 77, 0.55);
+        box-shadow: 0 0 0 3px rgba(230, 184, 77, 0.18);
+      }
+      .empty {
+        color: var(--muted);
+        padding: 24px 14px;
+        text-align: center;
         font-size: 0.9rem;
       }
-      pre {
-        white-space: pre-wrap;
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 14px;
-        font-size: 0.85rem;
-        max-height: 420px;
-        overflow: auto;
+      .err { color: var(--weak); margin-top: 8px; min-height: 1.2em; flex-shrink: 0; }
+      .hint {
+        color: var(--muted);
+        font-size: 0.8rem;
+        padding: 8px 14px;
+        margin: 0;
+        flex-shrink: 0;
+        border-bottom: 1px solid var(--border);
+        background: var(--panel2);
       }
     </style>
   </head>
   <body>
-    <main>
+    <div class="shell">
       <h1>Management Health</h1>
-      <p class="sub">Analyze once, then reuse until a newer concall appears.</p>
-      <form id="f">
+      <p class="sub">Promised vs delivered across recent concalls — click a card to jump into the transcript.</p>
+      <form class="top" id="f">
         <input id="symbol" placeholder="HDFCBANK" value="HDFCBANK" required />
-        <button type="submit" id="showBtn">Show</button>
+        <button type="submit">Show</button>
         <button type="button" class="secondary" id="updateBtn">Check for updates</button>
       </form>
-      <div id="out"></div>
-      <p class="err" id="err"></p>
-    </main>
-    <script>
-      const out = document.getElementById("out");
-      const err = document.getElementById("err");
-      const form = document.getElementById("f");
-      const updateBtn = document.getElementById("updateBtn");
-
-      function render(data) {
-        err.textContent = "";
-        const j = data.portfolioJson;
-        const flags = (j.redFlags || []).map((f) => `<li>${escapeHtml(f)}</li>`).join("") || "<li>None material</li>";
-        const rows = (j.commitments || [])
-          .map(
-            (c) => `<tr>
-              <td>${escapeHtml(c.quarter)}</td>
-              <td>${escapeHtml(c.commitment)}</td>
-              <td>${escapeHtml(c.status)}</td>
-              <td>${escapeHtml(c.evidence || "")}</td>
-            </tr>`
-          )
-          .join("");
-        const timeline = (j.timeline || [])
-          .map(
-            (t) => `<div class="t-item"><strong>${escapeHtml(t.quarter)}</strong><span>${t.score}</span><span>${escapeHtml(t.note)}</span></div>`
-          )
-          .join("");
-        const statusBits = [
-          data.cacheHit ? "cached" : "fresh",
-          data.source || "",
-          data.updateAvailable ? "newer concall available — set API key to refresh" : "",
-        ].filter(Boolean);
-        out.innerHTML = `
-          <div class="score-row">
-            <div class="gauge ${escapeHtml(j.label)}">${j.healthScore}</div>
-            <div>
-              <div><strong>${escapeHtml(j.symbol)}</strong> — ${escapeHtml(j.label)}</div>
-              <div class="meta">LLM timeline avg: ${j.rawScore ?? "—"} · ${j.transcriptCount} transcripts · ${escapeHtml(statusBits.join(" · "))}</div>
-              <p>${escapeHtml(j.summary || "")}</p>
+      <div id="score"></div>
+      <div class="layout" id="layout" hidden>
+        <section class="col">
+          <div class="col-h">
+            <h2>Promised vs delivered</h2>
+            <div class="chips" id="chips"></div>
+          </div>
+          <div class="cards" id="cards"></div>
+        </section>
+        <section class="col transcript-col" id="transcriptCol">
+          <div class="col-h">
+            <h2>Transcript</h2>
+            <div class="tx-tools">
+              <select id="txSelect" aria-label="Select quarter transcript"></select>
             </div>
           </div>
-          <h2>Red flags</h2>
-          <ul>${flags}</ul>
-          <h2>Commitments</h2>
-          <table>
-            <thead><tr><th>Quarter</th><th>Commitment</th><th>Status</th><th>Evidence</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-          <h2>Timeline</h2>
-          <div class="timeline">${timeline || "<div class='meta'>No timeline extracted</div>"}</div>
-          <h2>Full markdown</h2>
-          <pre>${escapeHtml(data.markdown || "")}</pre>
-        `;
-      }
+          <p class="hint" id="txHint">Click a card — this panel stays put; only the text below scrolls to the quote.</p>
+          <div class="transcript" id="transcript"></div>
+        </section>
+      </div>
+      <p class="err" id="err"></p>
+    </div>
+    <script>
+      const state = {
+        data: null,
+        filter: "all",
+        activeId: null,
+        quarterKey: null, // e.g. Q2FY26 — filters left cards when set via dropdown
+        txIndex: 0,
+      };
+
+      const el = (id) => document.getElementById(id);
 
       function escapeHtml(s) {
-        return String(s)
+        return String(s ?? "")
           .replaceAll("&", "&amp;")
           .replaceAll("<", "&lt;")
           .replaceAll(">", "&gt;");
       }
 
-      async function run(mode) {
-        const symbol = document.getElementById("symbol").value.trim().toUpperCase();
-        if (!symbol) return;
-        err.textContent = "";
-        out.innerHTML = "<p class='meta'>Working…</p>";
-        form.querySelectorAll("button").forEach((b) => (b.disabled = true));
-        try {
-          let res;
-          if (mode === "show") {
-            // Read-only: SQLite cache or bundled examples — never calls LLM
-            res = await fetch("/analysis/" + encodeURIComponent(symbol));
-          } else {
-            // Discover newest concall; reuse cache if unchanged; LLM only if new/forced
-            res = await fetch("/analyze/" + encodeURIComponent(symbol), { method: "POST" });
+      function bucket(status) {
+        if (status === "Met" || status === "Partially Completed") return "delivered";
+        if (status === "Not Met") return "missed";
+        return "open";
+      }
+
+      function quarterKeyFromLabel(label) {
+        const m = String(label || "").match(/Q[1-4]FY\d{2}/i);
+        return m ? m[0].toUpperCase() : "";
+      }
+
+      function cardsFromData(data) {
+        const j = data.portfolioJson;
+        const insights = Array.isArray(j.insights) && j.insights.length
+          ? j.insights
+          : (j.commitments || []).map((c, i) => ({
+              id: "c-" + i,
+              kind: bucket(c.status),
+              title: c.commitment,
+              body: c.evidence || "",
+              quarter: c.quarter,
+              status: c.status,
+              quote: c.quote || c.evidence || "",
+              callDate: c.callDate,
+              sourceUrl: c.sourceUrl,
+              charOffset: c.charOffset,
+            }));
+        return insights;
+      }
+
+      function counts(cards) {
+        const c = { all: cards.length, delivered: 0, missed: 0, open: 0, risk: 0 };
+        for (const x of cards) {
+          if (x.kind === "delivered") c.delivered++;
+          else if (x.kind === "missed") c.missed++;
+          else if (x.kind === "open") c.open++;
+          else if (x.kind === "risk") c.risk++;
+          else c.open++;
+        }
+        return c;
+      }
+
+      function renderScore(data) {
+        const j = data.portfolioJson;
+        const bits = [
+          data.cacheHit ? "cached" : "fresh",
+          data.source || "",
+          data.updateAvailable ? "newer concall available" : "",
+          (data.transcripts || []).length + " transcripts loaded",
+        ].filter(Boolean);
+        el("score").innerHTML = `
+          <div class="score-row">
+            <div class="gauge ${escapeHtml(j.label)}">${j.healthScore}</div>
+            <div>
+              <div><strong>${escapeHtml(j.symbol)}</strong> — ${escapeHtml(j.label)}</div>
+              <div class="meta">${escapeHtml(bits.join(" · "))}</div>
+              <p style="margin:8px 0 0;font-size:0.92rem">${escapeHtml(j.summary || "")}</p>
+            </div>
+          </div>`;
+      }
+
+      function renderChips(cards) {
+        const c = counts(cards);
+        const items = [
+          ["all", "All"],
+          ["delivered", "Delivered"],
+          ["missed", "Missed"],
+          ["open", "Still open"],
+          ["risk", "Risks"],
+        ];
+        el("chips").innerHTML = items
+          .map(
+            ([k, label]) =>
+              `<button type="button" class="chip ${state.filter === k ? "on" : ""}" data-f="${k}">${label}<span class="n">${c[k] ?? 0}</span></button>`
+          )
+          .join("");
+        el("chips").onclick = (e) => {
+          const b = e.target.closest("[data-f]");
+          if (!b) return;
+          state.filter = b.getAttribute("data-f");
+          renderCards();
+          renderChips(filteredCardsBase());
+        };
+      }
+
+      function filteredCardsBase() {
+        let cards = cardsFromData(state.data);
+        if (state.quarterKey) {
+          cards = cards.filter((x) => {
+            const q = quarterKeyFromLabel(x.quarter);
+            // risks with no quarter stay visible when browsing a quarter
+            if (!q) return x.kind === "risk";
+            return q === state.quarterKey;
+          });
+        }
+        return cards;
+      }
+
+      function filteredCards() {
+        const cards = filteredCardsBase();
+        if (state.filter === "all") return cards;
+        return cards.filter((x) => x.kind === state.filter);
+      }
+
+      function renderCards() {
+        const cards = filteredCards();
+        if (!cards.length) {
+          el("cards").innerHTML = `<div class="empty">No items for this quarter / filter.</div>`;
+          return;
+        }
+        el("cards").innerHTML = cards
+          .map((c) => {
+            const tag = c.kind || "open";
+            const status = c.status ? ` · ${escapeHtml(c.status)}` : "";
+            return `<button type="button" class="card ${state.activeId === c.id ? "active" : ""}" data-id="${escapeHtml(c.id)}">
+              <div class="row">
+                <span class="tag ${tag}">${escapeHtml(tag)}</span>
+                <span class="qtr">${escapeHtml(c.quarter || "")}${status}</span>
+              </div>
+              <strong>${escapeHtml(c.title)}</strong>
+              <p>${escapeHtml(c.body || c.quote || "")}</p>
+              <div class="jump">open in transcript →</div>
+            </button>`;
+          })
+          .join("");
+        el("cards").onclick = (e) => {
+          const b = e.target.closest("[data-id]");
+          if (!b) return;
+          openInsight(b.getAttribute("data-id"));
+        };
+      }
+
+      /** Scroll only inside #transcript — never the page. */
+      function scrollTranscriptToHit() {
+        const container = el("transcript");
+        const hit = document.getElementById("hit");
+        if (!container || !hit) return;
+        // offsetTop is relative to offsetParent; keep mark as direct content child
+        const top = hit.offsetTop - Math.max(40, Math.floor(container.clientHeight * 0.2));
+        container.scrollTop = Math.max(0, top);
+      }
+
+      /** Expand a hit into surrounding paragraph(s) so multi-line insight context is visible. */
+      function expandToPassage(text, start, seedLen) {
+        if (!text || start < 0) return null;
+        const n = text.length;
+        // Prefer blank-line paragraph boundaries; fall back to sentence-ish breaks.
+        const paraBreak = /\n\s*\n/;
+        // Walk left to previous double-newline
+        let from = start;
+        while (from > 0) {
+          const slice = text.slice(Math.max(0, from - 2), from);
+          if (paraBreak.test(slice) || text.slice(from - 1, from) === "\n" && text.slice(from - 2, from - 1) === "\n") {
+            break;
           }
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || res.statusText);
-          render(data);
-        } catch (e) {
-          out.innerHTML = "";
-          err.textContent = e.message || String(e);
-        } finally {
-          form.querySelectorAll("button").forEach((b) => (b.disabled = false));
+          // also stop at a lone newline followed by speaker-like "Name:"
+          if (from > 1 && text[from - 1] === "\n") {
+            const look = text.slice(from, Math.min(n, from + 60));
+            if (/^[A-Z][A-Za-z .'-]{2,40}\s*:/.test(look)) break;
+          }
+          from--;
+          if (start - from > 900) break; // safety
+        }
+        // Walk right to next double-newline or speaker turn
+        let to = Math.min(n, start + Math.max(seedLen, 1));
+        while (to < n) {
+          if (text[to] === "\n" && text[to + 1] === "\n") {
+            to += 2;
+            break;
+          }
+          if (text[to] === "\n") {
+            const look = text.slice(to + 1, Math.min(n, to + 61));
+            if (/^[A-Z][A-Za-z .'-]{2,40}\s*:/.test(look)) break;
+          }
+          to++;
+          if (to - start > 1200) break;
+        }
+        // Ensure we cover at least ~2–4 lines of body
+        const minLen = 280;
+        if (to - from < minLen) {
+          from = Math.max(0, start - 120);
+          to = Math.min(n, start + Math.max(seedLen, minLen - 120));
+        }
+        // Trim outer whitespace/newlines for cleaner mark
+        while (from < to && /\s/.test(text[from])) from++;
+        while (to > from && /\s/.test(text[to - 1])) to--;
+        if (to <= from) return { start, len: Math.min(160, n - start) };
+        return { start: from, len: to - from };
+      }
+
+      /** Find best char start/len for a quote or card title inside transcript text. */
+      function findInTranscript(text, quote, title) {
+        const attempts = [];
+        const push = (s) => {
+          const v = String(s || "").trim();
+          if (v.length >= 10) attempts.push(v);
+        };
+        push(quote);
+        push(title);
+        for (const s of [quote, title]) {
+          if (!s) continue;
+          const words = String(s).split(/\s+/).filter(Boolean);
+          if (words.length >= 4) push(words.slice(0, 10).join(" "));
+          if (words.length >= 4) push(words.slice(0, 6).join(" "));
+          if (words.length >= 3) push(words.slice(0, 4).join(" "));
+        }
+        const stop = new Set(["which","their","about","would","could","should","after","before","being","there","these","those","with","from","that","this","have","will","into","over","under","ratio","growth","quarter"]);
+        const tokens = String(title || quote || "")
+          .split(/[^A-Za-z0-9%'.-]+/)
+          .filter((w) => w.length >= 5 && !stop.has(w.toLowerCase()));
+        for (const tok of tokens.slice(0, 8)) push(tok);
+
+        const lower = text.toLowerCase();
+        for (const attempt of attempts) {
+          let idx = text.indexOf(attempt);
+          if (idx < 0) idx = lower.indexOf(attempt.toLowerCase());
+          if (idx < 0) {
+            const flatAttempt = attempt.replace(/\s+/g, " ").toLowerCase();
+            const flatText = text.replace(/\s+/g, " ");
+            const flatLower = flatText.toLowerCase();
+            const fIdx = flatLower.indexOf(flatAttempt);
+            if (fIdx >= 0) {
+              idx = Math.min(text.length - 1, Math.floor((fIdx / flatText.length) * text.length));
+              const needle = attempt.split(/\s+/).slice(0, 4).join(" ");
+              const windowStart = Math.max(0, idx - 200);
+              const window = text.slice(windowStart, windowStart + 800);
+              const local = window.toLowerCase().indexOf(needle.toLowerCase());
+              if (local >= 0) idx = windowStart + local;
+              else idx = -1;
+            }
+          }
+          if (idx >= 0) {
+            return expandToPassage(text, idx, Math.min(Math.max(attempt.length, 48), 200));
+          }
+        }
+        return null;
+      }
+
+      function renderTxSelect() {
+        const txs = state.data.transcripts || [];
+        el("txSelect").innerHTML = txs.length
+          ? `<option value="all">All quarters (cards)</option>` +
+            txs
+              .map(
+                (t, i) =>
+                  `<option value="${i}">${escapeHtml(t.fyQuarter)} · ${escapeHtml(t.callDate)}</option>`
+              )
+              .join("")
+          : `<option value="">No local transcripts — run Check for updates once</option>`;
+
+        el("txSelect").onchange = () => {
+          const val = el("txSelect").value;
+          if (val === "all" || val === "") {
+            state.quarterKey = null;
+            state.activeId = null;
+            renderChips(filteredCardsBase());
+            renderCards();
+            if (txs[0]) showTranscript(0, null, null);
+            el("txHint").textContent = "All quarters — click a card to open its transcript on the right.";
+            return;
+          }
+          const idx = Number(val);
+          state.txIndex = idx;
+          const t = txs[idx];
+          state.quarterKey = t ? t.fyQuarter.toUpperCase() : null;
+          state.activeId = null;
+          renderChips(filteredCardsBase());
+          renderCards();
+          showTranscript(idx, null, null);
+          el("txHint").textContent = t
+            ? `${t.fyQuarter} — left list filtered to this quarter`
+            : "";
+        };
+
+        if (txs.length) {
+          state.txIndex = 0;
+          state.quarterKey = null;
+          el("txSelect").value = "all";
+          showTranscript(0, null, null);
+          el("txHint").textContent = "All quarters — click a card to jump inside the transcript panel.";
+        } else {
+          el("transcript").textContent =
+            "Transcripts not on this machine yet. Click Check for updates to fetch PDFs, then click a card.";
         }
       }
 
-      form.addEventListener("submit", (e) => {
+      function showTranscript(index, quote, charOffset, title) {
+        const txs = state.data.transcripts || [];
+        const t = txs[index];
+        if (!t) return;
+        state.txIndex = index;
+        el("txSelect").value = String(index);
+
+        let hint = `${t.fyQuarter} · ${t.callDate}`;
+        let hit = null;
+
+        // Prefer live search in this transcript (more reliable than stale offsets)
+        if (quote || title) {
+          hit = findInTranscript(t.text, quote, title);
+        }
+        if (!hit && typeof charOffset === "number" && charOffset >= 0 && charOffset < t.text.length) {
+          hit = expandToPassage(t.text, charOffset, 96);
+        }
+
+        let html;
+        if (hit) {
+          // hit is already an expanded passage from findInTranscript/expandToPassage.
+          // Mark a tighter "core" around the seed match inside that passage.
+          const p0 = hit.start;
+          const p1 = hit.start + hit.len;
+          // Approximate core: middle-ish 25–40% of passage, or first strong needle
+          let c0 = p0;
+          let c1 = p1;
+          const needle = String(quote || title || "")
+            .trim()
+            .split(/\s+/)
+            .slice(0, 6)
+            .join(" ");
+          if (needle.length >= 8) {
+            const local = t.text.slice(p0, p1).toLowerCase().indexOf(needle.toLowerCase());
+            if (local >= 0) {
+              c0 = p0 + local;
+              c1 = Math.min(p1, c0 + Math.max(needle.length, 40));
+            }
+          }
+          if (c1 > c0 && (c0 > p0 || c1 < p1)) {
+            html =
+              escapeHtml(t.text.slice(0, p0)) +
+              "<mark class='passage' id='hit'>" +
+              escapeHtml(t.text.slice(p0, c0)) +
+              "<mark class='core'>" +
+              escapeHtml(t.text.slice(c0, c1)) +
+              "</mark>" +
+              escapeHtml(t.text.slice(c1, p1)) +
+              "</mark>" +
+              escapeHtml(t.text.slice(p1));
+          } else {
+            html =
+              escapeHtml(t.text.slice(0, p0)) +
+              "<mark class='passage' id='hit'>" +
+              escapeHtml(t.text.slice(p0, p1)) +
+              "</mark>" +
+              escapeHtml(t.text.slice(p1));
+          }
+          const lines = (t.text.slice(p0, p1).match(/\n/g) || []).length + 1;
+          hint += ` · highlighted ~${lines}-line passage`;
+        } else {
+          html = escapeHtml(t.text);
+          hint += quote || title
+            ? " · could not locate quote in this file"
+            : " · pick a card to jump to the source line";
+        }
+
+        el("txHint").textContent = hint;
+        el("transcript").innerHTML = html;
+
+        // Wait for layout so clientHeight is correct, then scroll ONLY this pane
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (hit) scrollTranscriptToHit();
+            else el("transcript").scrollTop = 0;
+          });
+        });
+      }
+
+      function resolveTxIndex(card) {
+        const txs = state.data.transcripts || [];
+        if (!txs.length) return -1;
+        if (card.callDate) {
+          const i = txs.findIndex((t) => t.callDate === card.callDate);
+          if (i >= 0) return i;
+        }
+        if (card.sourceUrl) {
+          const i = txs.findIndex((t) => t.sourceUrl === card.sourceUrl);
+          if (i >= 0) return i;
+        }
+        const q = quarterKeyFromLabel(card.quarter);
+        if (q) {
+          const i = txs.findIndex((t) => t.fyQuarter.toUpperCase() === q);
+          if (i >= 0) return i;
+        }
+        return state.txIndex || 0;
+      }
+
+      function openInsight(id) {
+        state.activeId = id;
+        const card = cardsFromData(state.data).find((x) => x.id === id);
+        if (!card) return;
+
+        const idx = resolveTxIndex(card);
+        if (idx < 0) {
+          el("txHint").textContent = "No transcript files yet — click Check for updates first.";
+          renderCards();
+          return;
+        }
+
+        const t = state.data.transcripts[idx];
+        state.quarterKey = t.fyQuarter.toUpperCase();
+        state.txIndex = idx;
+        renderChips(filteredCardsBase());
+        renderCards();
+        showTranscript(idx, card.quote || card.body, card.charOffset, card.title);
+      }
+
+      function renderAll(data) {
+        state.data = data;
+        state.filter = "all";
+        state.activeId = null;
+        state.quarterKey = null;
+        state.txIndex = 0;
+        el("layout").hidden = false;
+        renderScore(data);
+        renderChips(filteredCardsBase());
+        renderCards();
+        renderTxSelect();
+      }
+
+      async function run(mode) {
+        const symbol = el("symbol").value.trim().toUpperCase();
+        if (!symbol) return;
+        el("err").textContent = "";
+        el("f").querySelectorAll("button").forEach((b) => (b.disabled = true));
+        try {
+          const res =
+            mode === "show"
+              ? await fetch("/analysis/" + encodeURIComponent(symbol))
+              : await fetch("/analyze/" + encodeURIComponent(symbol) + "?force=1", { method: "POST" });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || res.statusText);
+          renderAll(data);
+        } catch (e) {
+          el("err").textContent = e.message || String(e);
+        } finally {
+          el("f").querySelectorAll("button").forEach((b) => (b.disabled = false));
+        }
+      }
+
+      el("f").addEventListener("submit", (e) => {
         e.preventDefault();
         run("show");
       });
-      updateBtn.addEventListener("click", () => run("update"));
-      // Auto-show bundled/cached HDFCBANK on load
+      el("updateBtn").addEventListener("click", () => run("update"));
       run("show");
     </script>
   </body>

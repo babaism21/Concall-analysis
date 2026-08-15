@@ -29,6 +29,7 @@ function loadEnv() {
 function usage() {
   console.log(`Usage:
   npm run ingest -- SYMBOL
+  npm run reparse -- SYMBOL   # force full PDF→text refresh (fixes old truncation)
   npm run analyze -- SYMBOL [--force]
   npm run get -- SYMBOL
   npm run serve
@@ -67,6 +68,12 @@ async function main() {
 
   if (cmd === "ingest") {
     const result = await ingestSymbol(symbol);
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
+  if (cmd === "reparse") {
+    const result = await ingestSymbol(symbol, undefined, { forceReparse: true });
     console.log(JSON.stringify(result, null, 2));
     return;
   }

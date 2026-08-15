@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 // pdf-parse is CJS; default import works under NodeNext + tsx.
 import pdf from "pdf-parse";
-import { TRANSCRIPT_CHAR_CAP } from "../config.ts";
 
 /**
- * Trim preamble: keep from first speaker turn after a "moderator" cue when possible.
- * Cap length for LLM context.
+ * Clean transcript for storage + UI.
+ * Do NOT truncate here — full text is required for deep-link highlights.
+ * LLM context capping happens only in analyze/run.ts.
  */
-export function cleanTranscriptText(raw: string, cap = TRANSCRIPT_CHAR_CAP): string {
+export function cleanTranscriptText(raw: string): string {
   let text = raw.replace(/\r/g, "\n");
   text = text.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n");
 
@@ -25,9 +25,6 @@ export function cleanTranscriptText(raw: string, cap = TRANSCRIPT_CHAR_CAP): str
     }
   }
 
-  if (text.length > cap) {
-    text = text.slice(0, cap) + "\n\n[... truncated for analysis context ...]";
-  }
   return text.trim();
 }
 

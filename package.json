@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "ingest": "tsx src/cli.ts ingest",
+    "reparse": "tsx src/cli.ts reparse",
     "analyze": "tsx src/cli.ts analyze",
     "get": "tsx src/cli.ts get",
     "serve": "tsx src/cli.ts serve",

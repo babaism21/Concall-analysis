@@ -20,7 +20,8 @@ export type IngestResult = {
 
 export async function ingestSymbol(
   symbol: string,
-  limit = MAX_TRANSCRIPTS
+  limit = MAX_TRANSCRIPTS,
+  opts: { forceReparse?: boolean } = {}
 ): Promise<IngestResult> {
   const sym = symbol.trim().toUpperCase();
   const db = getDb();
@@ -53,30 +54,51 @@ export async function ingestSymbol(
 
   const transcripts: IngestResult["transcripts"] = [];
 
-  const existingOk = db.prepare(
-    `SELECT source_url FROM parsed_conference_content
-     WHERE symbol = ? AND source_url = ? AND parse_status = 'ok' AND text_content IS NOT NULL`
+  const existingRow = db.prepare(
+    `SELECT call_date as callDate, fy_quarter as fyQuarter, source_url as sourceUrl,
+            char_count as charCount, text_content as text, pdf_path as pdfPath, parse_status as parseStatus
+     FROM parsed_conference_content WHERE symbol = ? AND source_url = ?`
   );
 
   for (const item of top) {
     upsertUrl.run(sym, item.callDate, item.sourceUrl, ts);
     try {
-      if (existingOk.get(sym, item.sourceUrl)) {
-        const row = db
-          .prepare(
-            `SELECT call_date as callDate, fy_quarter as fyQuarter, source_url as sourceUrl, char_count as charCount
-             FROM parsed_conference_content WHERE symbol = ? AND source_url = ?`
-          )
-          .get(sym, item.sourceUrl) as {
-          callDate: string;
-          fyQuarter: string;
-          sourceUrl: string;
-          charCount: number;
-        };
-        transcripts.push(row);
-        console.log(`[ingest] parse cache hit ${row.fyQuarter} ${row.callDate}`);
+      const existing = existingRow.get(sym, item.sourceUrl) as
+        | {
+            callDate: string;
+            fyQuarter: string;
+            sourceUrl: string;
+            charCount: number;
+            text: string | null;
+            pdfPath: string | null;
+            parseStatus: string;
+          }
+        | undefined;
+
+      const isTruncated =
+        Boolean(existing?.text?.includes("[... truncated for analysis context ...]"));
+      const canReuse =
+        !opts.forceReparse &&
+        !isTruncated &&
+        existing?.parseStatus === "ok" &&
+        existing.text &&
+        existing.charCount > 500;
+
+      if (canReuse) {
+        transcripts.push({
+          callDate: existing.callDate,
+          fyQuarter: existing.fyQuarter,
+          sourceUrl: existing.sourceUrl,
+          charCount: existing.charCount,
+        });
+        console.log(`[ingest] parse cache hit ${existing.fyQuarter} ${existing.callDate} (${existing.charCount} chars)`);
         continue;
       }
+
+      if (isTruncated) {
+        console.log(`[ingest] reparse truncated transcript ${item.callDate}`);
+      }
+
       const pdfPath = await downloadPdf(sym, item.callDate, item.sourceUrl);
       const { text, charCount } = await parsePdfToText(pdfPath);
       if (charCount < 500) {

@@ -18,19 +18,22 @@ Not a full research chat app. Not coupled to any portfolio OS.
 ```bash
 npm install
 cp .env.example .env   # set OPENROUTER_API_KEY
+# Default model: moonshotai/kimi-k2.5 (cheap). Override with MODEL_ID=...
 
-# One-symbol end-to-end (first time only — needs API key)
+# If UI still shows "[... truncated ...]", force full PDF→text refresh:
+npm run reparse -- HDFCBANK
+
+# First analysis (needs API key)
 npm run analyze -- HDFCBANK
 
 # Read cache only (no API key)
 npm run get -- HDFCBANK
 
-# API + UI — Show uses cache/examples; Check for updates reuses cache if unchanged
+# API + UI
 npm run serve
-# GET  http://localhost:8787/analysis/HDFCBANK
-# POST http://localhost:8787/analyze/HDFCBANK
-# UI   http://localhost:8787/
 ```
+
+**Full transcripts in UI.** Truncation applies only when packing text into the LLM prompt (Kimi large context → much less need to cut).
 
 ## Architecture
 
@@ -70,6 +73,8 @@ Headline score = deterministic from commitments. LLM also returns a quarterly ti
 | **Check for updates** | `POST /analyze/:symbol` | Only if newest transcript URL changed (or `?force=1`) | Only when LLM runs |
 
 `GET` order: SQLite `data/concall.db` → bundled `examples/{SYMBOL}.json` (then seeded into SQLite).
+
+**Transcripts are stored in full.** The `[... truncated ...]` marker was a bug (cap applied at parse time). Truncation now applies **only** when building the LLM prompt (`TRANSCRIPT_CHAR_CAP`), never in the UI.
 
 ## Env
 

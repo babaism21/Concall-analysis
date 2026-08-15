@@ -4,6 +4,7 @@ Analyze management credibility from earnings conference call transcripts.
 Rules:
 - Use ONLY the provided transcript text. Do not invent numbers or commitments.
 - Focus on guidance vs delivery across quarters: what was promised, what was delivered later.
+- Every Evidence / Quote field MUST be a short verbatim substring copied from the transcripts (for deep-linking).
 - Be specific (metrics, timelines, status). Mark uncertainty explicitly.
 - Output structured markdown exactly in the section order requested.`;
 
@@ -20,7 +21,8 @@ export function buildHealthcheckUserPrompt(
 
   return `Symbol: ${symbol}
 
-Below are the latest conference call transcripts (newest first), cleaned and truncated.
+Below are the latest conference call transcripts (newest first), cleaned.
+(Some older/longer calls may be shortened only for model context; the product stores full text.)
 
 Produce markdown with these exact sections:
 
@@ -31,8 +33,14 @@ Produce markdown with these exact sections:
 A markdown table with columns:
 | Quarter | Commitment | Status | Evidence |
 Status must be exactly one of: Met | Partially Completed | Under Execution | Early Execution | Not Met
+Evidence must be a short verbatim quote (≤25 words) copied from the transcripts.
 
 Include 6–15 of the most material commitments spanning the provided calls. Prefer measurable guidance (growth, margins, order book, capex, launches, NPAs, etc.).
+
+## Insight Cards
+Bullet list of 8–14 recent insights (newest calls first). Each bullet:
+- **KIND** — TITLE — QUARTER — "verbatim quote ≤20 words"
+KIND is one of: DELIVERED | MISSED | OPEN | RISK | GUIDANCE
 
 ## Red Flags
 Bullet list (or "None material").
@@ -48,7 +56,8 @@ ${body}`;
 }
 
 export const JSON_EXTRACT_SYSTEM = `Extract structured JSON from a management healthcheck markdown report.
-Return ONLY valid JSON matching the schema. No markdown fences.`;
+Return ONLY valid JSON matching the schema. No markdown fences.
+Quotes must stay verbatim from the markdown/evidence fields.`;
 
 export function buildJsonExtractPrompt(markdown: string): string {
   return `From this management healthcheck markdown, extract JSON:
@@ -57,7 +66,22 @@ export function buildJsonExtractPrompt(markdown: string): string {
   "rawScore": <number 0-10 average of quarterly timeline scores if present, else null>,
   "redFlags": ["..."],
   "commitments": [
-    { "quarter": "...", "commitment": "...", "status": "Met|Partially Completed|Under Execution|Early Execution|Not Met", "evidence": "..." }
+    {
+      "quarter": "...",
+      "commitment": "...",
+      "status": "Met|Partially Completed|Under Execution|Early Execution|Not Met",
+      "evidence": "...",
+      "quote": "verbatim evidence quote"
+    }
+  ],
+  "insights": [
+    {
+      "kind": "delivered|missed|open|risk|guidance",
+      "title": "...",
+      "body": "...",
+      "quarter": "...",
+      "quote": "verbatim quote"
+    }
   ],
   "timeline": [
     { "quarter": "...", "score": <0-10>, "note": "..." }

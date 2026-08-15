@@ -16,73 +16,118 @@
       "quarter": "Q4FY25 (Jan-25)",
       "commitment": "Bring CD ratio down from ~110% (merger) glide path toward ~95% by FY25-end",
       "status": "Met",
-      "evidence": "Q1FY26 call confirms CD ratio at ~96% as of March 2025"
+      "evidence": "Q1FY26 call confirms CD ratio at ~96% as of March 2025",
+      "quote": "ratio as quickly as\npossible over a 2- to 3-year timeframe. FY '25 will be lesser",
+      "callDate": "2025-01-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/a7e4ad26-5c9e-4ffe-a610-28241b35c3b0.pdf",
+      "charOffset": 21847
     },
     {
       "quarter": "Q1FY26 (Apr-25)",
       "commitment": "Grow loans in line with system in FY26, faster than system in FY27",
       "status": "Under Execution",
-      "evidence": "Reiterated in Q2FY26, Q3FY26, Q4FY26 calls; FY26 loan growth reported at 12% vs system's ~10.5-11.5% (Q1FY27 call), suggesting outperformance already, ahead of FY27 target"
+      "evidence": "Reiterated in Q2FY26, Q3FY26, Q4FY26 calls; FY26 loan growth reported at 12% vs system's ~10.5-11.5% (Q1FY27 call), suggesting outperformance already, ahead of FY27 target",
+      "quote": "in line with what we had committed, the adjustment i",
+      "callDate": "2025-04-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ff4ae1b4-cf07-4f6d-b097-3bd8139fb570.pdf",
+      "charOffset": 2078
     },
     {
       "quarter": "Q1FY26 (Apr-25)",
       "commitment": "LDR to reach 85-90% by FY27",
       "status": "Under Execution",
-      "evidence": "Reaffirmed across Q2FY26/Q3FY26/Q4FY26 calls as '1-2 years out'; not yet achieved as of Q1FY27"
+      "evidence": "Reaffirmed across Q2FY26/Q3FY26/Q4FY26 calls as '1-2 years out'; not yet achieved as of Q1FY27",
+      "quote": "help supporting the GDP growth. For FY '26, we expect the GDP to be supported by a",
+      "callDate": "2025-04-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ff4ae1b4-cf07-4f6d-b097-3bd8139fb570.pdf",
+      "charOffset": 991
     },
     {
       "quarter": "Q2FY26 (Jul-25)",
       "commitment": "Margins to stabilize as EBLR repricing plays through (June 2025 rate cut)",
       "status": "Partially Completed",
-      "evidence": "Q3FY26 call shows NIM compressed 8bps; cost of funds improving only gradually (6-quarter lag cited)"
+      "evidence": "Q3FY26 call shows NIM compressed 8bps; cost of funds improving only gradually (6-quarter lag cited)",
+      "quote": "under management has improved\nto  8%  in  the  quarter  just  ended,  w",
+      "callDate": "2025-07-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/d1268138-e288-4335-9764-7a944dfa3570.pdf",
+      "charOffset": 1833
     },
     {
       "quarter": "Q3FY26 (Oct-25)",
       "commitment": "Exit NIM to match/improve on last year's Q4 core margins",
       "status": "Under Execution",
-      "evidence": "Q4FY26 call shows continued margin drop due to faster yield transmission vs deposit costs; not yet confirmed met"
+      "evidence": "Q4FY26 call shows continued margin drop due to faster yield transmission vs deposit costs; not yet confirmed met",
+      "quote": "Q4FY26 call shows continued margin drop due to faster yield transmission vs deposit costs; not yet confirmed met",
+      "callDate": "2025-10-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/145964f9-580c-4d3f-b239-759f7b6a7a28.pdf"
     },
     {
       "quarter": "Q4FY26 (Jan-26)",
       "commitment": "Agri portfolio regulatory compliance provisioning (~₹5bn) fully absorbed, no recurring impact expected",
       "status": "Met",
-      "evidence": "Provision taken in Dec-25 quarter, management stated it was one-time and subsumed in results"
+      "evidence": "Provision taken in Dec-25 quarter, management stated it was one-time and subsumed in results",
+      "quote": "Provision taken in Dec-25 quarter, management stated it was one-time and subsumed in results",
+      "callDate": "2026-03-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/56739132-e21e-4503-aeb6-85f4f53c1244.pdf"
     },
     {
       "quarter": "Q4FY26 (Jan-26)",
       "commitment": "CD ratio to continue downward glide, reach low-90s/90s range in FY26",
       "status": "Met",
-      "evidence": "Management stated FY26 range of 90-96% achieved as guided"
+      "evidence": "Management stated FY26 range of 90-96% achieved as guided",
+      "quote": "e Interim Part-Time Chairman for a period of 3 months. The governance\n\n HDFC",
+      "callDate": "2026-03-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/56739132-e21e-4503-aeb6-85f4f53c1244.pdf",
+      "charOffset": 2820
     },
     {
       "quarter": "FY25 annual (Q1FY27 call)",
       "commitment": "System credit growth estimate 10.5-11.5% for FY26",
       "status": "Met",
-      "evidence": "Actual system growth came in at 12%, bank's own guidance range was close; bank itself grew 12%"
+      "evidence": "Actual system growth came in at 12%, bank's own guidance range was close; bank itself grew 12%",
+      "quote": "had\nestimated the system credit growth to be around 10.5%",
+      "callDate": "2026-04-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/a77abbbb-954a-4221-8240-67bf0da6ba1c.pdf",
+      "charOffset": 575
     },
     {
       "quarter": "Q3FY26 (Oct-25)",
       "commitment": "Additional Whole-Time Director appointment to strengthen board",
       "status": "Not Met",
-      "evidence": "Still pending as of Q2FY27 call ('wait for the same'), no concrete appointment announced across multiple quarters"
+      "evidence": "Still pending as of Q2FY27 call ('wait for the same'), no concrete appointment announced across multiple quarters",
+      "quote": ", when we laid out was that the rate of growth on loans in this year",
+      "callDate": "2025-10-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/145964f9-580c-4d3f-b239-759f7b6a7a28.pdf",
+      "charOffset": 7043
     },
     {
       "quarter": "Q4FY26 (Mar-26, crisis call)",
       "commitment": "Legal review of Chairman resignation matter to be shared with stakeholders",
       "status": "Under Execution",
-      "evidence": "Q1FY27 call states 'legal review... is in process,' no summary provided yet"
+      "evidence": "Q1FY27 call states 'legal review... is in process,' no summary provided yet",
+      "quote": "Q1FY27 call states 'legal review... is in process,' no summary provided yet",
+      "callDate": "2026-03-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/56739132-e21e-4503-aeb6-85f4f53c1244.pdf"
     },
     {
       "quarter": "Q1FY26 (Apr-25)",
       "commitment": "Priority sector lending (PSL) shortfall in SMF/weaker section to be closed via market instruments",
       "status": "Partially Completed",
-      "evidence": "Recurring theme across Q4FY25, Q1FY26 calls — shortfall (~1%) persists, management says 'endeavor' but not resolved"
+      "evidence": "Recurring theme across Q4FY25, Q1FY26 calls — shortfall (~1%) persists, management says 'endeavor' but not resolved",
+      "quote": "what you asked is the priority sector lending.\nWhile the prior",
+      "callDate": "2025-04-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ff4ae1b4-cf07-4f6d-b097-3bd8139fb570.pdf",
+      "charOffset": 13548
     },
     {
       "quarter": "Q2FY26 (Jul-25)",
       "commitment": "Deposit growth to continue gaining market share (30-50bps/year)",
       "status": "Met",
-      "evidence": "Q1FY27 call confirms FY26 household/retail deposit accretion share rose to 47% from 31%, market share gains reaffirmed"
+      "evidence": "Q1FY27 call confirms FY26 household/retail deposit accretion share rose to 47% from 31%, market share gains reaffirmed",
+      "quote": "growth to continue to improve from\nhere and remain confide",
+      "callDate": "2025-07-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/d1268138-e288-4335-9764-7a944dfa3570.pdf",
+      "charOffset": 2032
     }
   ],
   "timeline": [
@@ -130,5 +175,212 @@
   "summary": "HDFC Bank's management has generally delivered on medium-term, directionally-framed guidance (CD ratio glide path, deposit-led growth, cost discipline, asset quality) but avoids precise quarter-level commitments. Credibility took a hit in Q4FY26/Q1FY27 due to the abrupt Chairman resignation, Dubai branch litigation, and management transition uncertainty, despite proactive disclosure and regulatory backing.",
   "transcriptCount": 8,
   "latestSourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/509cc499-6cb1-4d9f-8de9-9c7de6c70eef.pdf",
-  "scoredAt": "2026-08-15T15:25:21.879Z"
+  "scoredAt": "2026-08-15T15:25:21.879Z",
+  "insights": [
+    {
+      "id": "c-0",
+      "kind": "delivered",
+      "title": "Bring CD ratio down from ~110% (merger) glide path toward ~95% by FY25-end",
+      "body": "Q1FY26 call confirms CD ratio at ~96% as of March 2025",
+      "quarter": "Q4FY25 (Jan-25)",
+      "status": "Met",
+      "quote": "ratio as quickly as\npossible over a 2- to 3-year timeframe. FY '25 will be lesser",
+      "callDate": "2025-01-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/a7e4ad26-5c9e-4ffe-a610-28241b35c3b0.pdf",
+      "charOffset": 21848
+    },
+    {
+      "id": "c-1",
+      "kind": "open",
+      "title": "Grow loans in line with system in FY26, faster than system in FY27",
+      "body": "Reiterated in Q2FY26, Q3FY26, Q4FY26 calls; FY26 loan growth reported at 12% vs system's ~10.5-11.5% (Q1FY27 call), suggesting outperformance already, ahead of FY27 target",
+      "quarter": "Q1FY26 (Apr-25)",
+      "status": "Under Execution",
+      "quote": "in line with what we had committed, the adjustment i",
+      "callDate": "2025-04-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ff4ae1b4-cf07-4f6d-b097-3bd8139fb570.pdf",
+      "charOffset": 2078
+    },
+    {
+      "id": "c-2",
+      "kind": "open",
+      "title": "LDR to reach 85-90% by FY27",
+      "body": "Reaffirmed across Q2FY26/Q3FY26/Q4FY26 calls as '1-2 years out'; not yet achieved as of Q1FY27",
+      "quarter": "Q1FY26 (Apr-25)",
+      "status": "Under Execution",
+      "quote": "help supporting the GDP growth. For FY '26, we expect the GDP to be supported by a",
+      "callDate": "2025-04-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ff4ae1b4-cf07-4f6d-b097-3bd8139fb570.pdf",
+      "charOffset": 991
+    },
+    {
+      "id": "c-3",
+      "kind": "delivered",
+      "title": "Margins to stabilize as EBLR repricing plays through (June 2025 rate cut)",
+      "body": "Q3FY26 call shows NIM compressed 8bps; cost of funds improving only gradually (6-quarter lag cited)",
+      "quarter": "Q2FY26 (Jul-25)",
+      "status": "Partially Completed",
+      "quote": "under management has improved\nto  8%  in  the  quarter  just  ended,  w",
+      "callDate": "2025-07-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/d1268138-e288-4335-9764-7a944dfa3570.pdf",
+      "charOffset": 1833
+    },
+    {
+      "id": "c-4",
+      "kind": "open",
+      "title": "Exit NIM to match/improve on last year's Q4 core margins",
+      "body": "Q4FY26 call shows continued margin drop due to faster yield transmission vs deposit costs; not yet confirmed met",
+      "quarter": "Q3FY26 (Oct-25)",
+      "status": "Under Execution",
+      "quote": "Q4FY26 call shows continued margin drop due to faster yield transmission vs deposit costs; not yet confirmed met",
+      "callDate": "2025-10-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/145964f9-580c-4d3f-b239-759f7b6a7a28.pdf"
+    },
+    {
+      "id": "c-5",
+      "kind": "delivered",
+      "title": "Agri portfolio regulatory compliance provisioning (~₹5bn) fully absorbed, no recurring impact expected",
+      "body": "Provision taken in Dec-25 quarter, management stated it was one-time and subsumed in results",
+      "quarter": "Q4FY26 (Jan-26)",
+      "status": "Met",
+      "quote": "Provision taken in Dec-25 quarter, management stated it was one-time and subsumed in results",
+      "callDate": "2026-03-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/56739132-e21e-4503-aeb6-85f4f53c1244.pdf"
+    },
+    {
+      "id": "c-6",
+      "kind": "delivered",
+      "title": "CD ratio to continue downward glide, reach low-90s/90s range in FY26",
+      "body": "Management stated FY26 range of 90-96% achieved as guided",
+      "quarter": "Q4FY26 (Jan-26)",
+      "status": "Met",
+      "quote": "e Interim Part-Time Chairman for a period of 3 months. The governance\n\n HDFC",
+      "callDate": "2026-03-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/56739132-e21e-4503-aeb6-85f4f53c1244.pdf",
+      "charOffset": 2820
+    },
+    {
+      "id": "c-7",
+      "kind": "delivered",
+      "title": "System credit growth estimate 10.5-11.5% for FY26",
+      "body": "Actual system growth came in at 12%, bank's own guidance range was close; bank itself grew 12%",
+      "quarter": "FY25 annual (Q1FY27 call)",
+      "status": "Met",
+      "quote": "had\nestimated the system credit growth to be around 10.5%",
+      "callDate": "2026-04-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/a77abbbb-954a-4221-8240-67bf0da6ba1c.pdf",
+      "charOffset": 575
+    },
+    {
+      "id": "c-8",
+      "kind": "missed",
+      "title": "Additional Whole-Time Director appointment to strengthen board",
+      "body": "Still pending as of Q2FY27 call ('wait for the same'), no concrete appointment announced across multiple quarters",
+      "quarter": "Q3FY26 (Oct-25)",
+      "status": "Not Met",
+      "quote": ", when we laid out was that the rate of growth on loans in this year",
+      "callDate": "2025-10-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/145964f9-580c-4d3f-b239-759f7b6a7a28.pdf",
+      "charOffset": 7043
+    },
+    {
+      "id": "c-9",
+      "kind": "open",
+      "title": "Legal review of Chairman resignation matter to be shared with stakeholders",
+      "body": "Q1FY27 call states 'legal review... is in process,' no summary provided yet",
+      "quarter": "Q4FY26 (Mar-26, crisis call)",
+      "status": "Under Execution",
+      "quote": "Q1FY27 call states 'legal review... is in process,' no summary provided yet",
+      "callDate": "2026-03-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/56739132-e21e-4503-aeb6-85f4f53c1244.pdf"
+    },
+    {
+      "id": "c-10",
+      "kind": "delivered",
+      "title": "Priority sector lending (PSL) shortfall in SMF/weaker section to be closed via market instruments",
+      "body": "Recurring theme across Q4FY25, Q1FY26 calls — shortfall (~1%) persists, management says 'endeavor' but not resolved",
+      "quarter": "Q1FY26 (Apr-25)",
+      "status": "Partially Completed",
+      "quote": "what you asked is the priority sector lending.\nWhile the prior",
+      "callDate": "2025-04-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ff4ae1b4-cf07-4f6d-b097-3bd8139fb570.pdf",
+      "charOffset": 13548
+    },
+    {
+      "id": "c-11",
+      "kind": "delivered",
+      "title": "Deposit growth to continue gaining market share (30-50bps/year)",
+      "body": "Q1FY27 call confirms FY26 household/retail deposit accretion share rose to 47% from 31%, market share gains reaffirmed",
+      "quarter": "Q2FY26 (Jul-25)",
+      "status": "Met",
+      "quote": "growth to continue to improve from\nhere and remain confide",
+      "callDate": "2025-07-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/d1268138-e288-4335-9764-7a944dfa3570.pdf",
+      "charOffset": 2032
+    },
+    {
+      "id": "r-0",
+      "kind": "risk",
+      "title": "Governance disruption: Abrupt resignation of Part-Time Chairman Atanu Chakraborty in March 2026 citi…",
+      "body": "Governance disruption: Abrupt resignation of Part-Time Chairman Atanu Chakraborty in March 2026 citing personal values/ethics misalignment — board claims no material issue found, but the specific trigger was never disclosed, leaving unresolved ambiguity.",
+      "quarter": "",
+      "quote": "e month of June in completing the documentation\n\n               HDFC",
+      "callDate": "2026-07-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/509cc499-6cb1-4d9f-8de9-9c7de6c70eef.pdf",
+      "charOffset": 2654
+    },
+    {
+      "id": "r-1",
+      "kind": "risk",
+      "title": "CEO reappointment timeline vagueness: Multiple analysts pressed on Sashi Jagdishan's reappointment t…",
+      "body": "CEO reappointment timeline vagueness: Multiple analysts pressed on Sashi Jagdishan's reappointment timeline (due within 7 months as of Mar-26 call); management gave no concrete timeline, only 'NRC will meet in near future.'",
+      "quarter": "",
+      "quote": "e month of June in completing the documentation\n\n               HDFC",
+      "callDate": "2026-07-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/509cc499-6cb1-4d9f-8de9-9c7de6c70eef.pdf",
+      "charOffset": 2654
+    },
+    {
+      "id": "r-2",
+      "kind": "risk",
+      "title": "Unfilled ED/board commitment: Promise of an additional Whole-Time Director 'in a short time period' …",
+      "body": "Unfilled ED/board commitment: Promise of an additional Whole-Time Director 'in a short time period' (Q2FY27 call) remains unfulfilled with vague language repeated across quarters.",
+      "quarter": "",
+      "quote": "a short time period and I would like\nyou to sort of",
+      "callDate": "2026-07-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/509cc499-6cb1-4d9f-8de9-9c7de6c70eef.pdf",
+      "charOffset": 9330
+    },
+    {
+      "id": "r-3",
+      "kind": "risk",
+      "title": "Dubai branch litigation: Referenced in Q1FY27 call notes to accounts; management leans on an NCDRC o…",
+      "body": "Dubai branch litigation: Referenced in Q1FY27 call notes to accounts; management leans on an NCDRC order favorable to the bank but provides no independent detail on quantum/status of exposure.",
+      "quarter": "",
+      "quote": ":    Thank you, Srini, and thank you all for joining in on this investor call fo",
+      "callDate": "2026-07-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/509cc499-6cb1-4d9f-8de9-9c7de6c70eef.pdf",
+      "charOffset": 281
+    },
+    {
+      "id": "r-4",
+      "kind": "risk",
+      "title": "Recurring 'wait and watch' framing on margins/LDR: Precise quarterly guidance is consistently avoide…",
+      "body": "Recurring 'wait and watch' framing on margins/LDR: Precise quarterly guidance is consistently avoided in favor of multi-quarter ranges, making accountability difficult to verify in real time.",
+      "quarter": "",
+      "quote": "Recurring 'wait and watch' framing on margins/LDR: Precise quarterly guidance is consistently avoided in favor of multi-quarter ranges, making accountability difficult to verify in",
+      "callDate": "2026-07-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/509cc499-6cb1-4d9f-8de9-9c7de6c70eef.pdf"
+    },
+    {
+      "id": "r-5",
+      "kind": "risk",
+      "title": "PSL shortfall persists across at least 3 years (weaker section/SMF) without full resolution, address…",
+      "body": "PSL shortfall persists across at least 3 years (weaker section/SMF) without full resolution, addressed only through market-purchased instruments (PSLCs/IBPC).",
+      "quarter": "",
+      "quote": "PSL shortfall persists across at least 3 years (weaker section/SMF) without full resolution, addressed only through market-purchased instruments (PSLCs/IBPC).",
+      "callDate": "2026-07-01",
+      "sourceUrl": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/509cc499-6cb1-4d9f-8de9-9c7de6c70eef.pdf"
+    }
+  ]
 }
