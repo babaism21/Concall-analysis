@@ -1,0 +1,26 @@
+{
+  "name": "concall-analysis",
+  "version": "0.1.0",
+  "description": "Management concall analysis — guidance vs delivery health scores for Indian equities",
+  "type": "module",
+  "scripts": {
+    "ingest": "tsx src/cli.ts ingest",
+    "analyze": "tsx src/cli.ts analyze",
+    "get": "tsx src/cli.ts get",
+    "serve": "tsx src/cli.ts serve",
+    "dev": "tsx src/cli.ts serve"
+  },
+  "dependencies": {
+    "openai": "^4.77.0",
+    "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/pdf-parse": "^1.1.4",
+    "tsx": "^4.20.3",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}

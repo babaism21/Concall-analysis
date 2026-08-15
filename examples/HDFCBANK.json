@@ -1,0 +1,133 @@
+{
+  "symbol": "HDFCBANK",
+  "healthScore": 70,
+  "label": "Average",
+  "rawScore": 6.5,
+  "redFlags": [
+    "Governance disruption: Abrupt resignation of Part-Time Chairman Atanu Chakraborty in March 2026 citing personal values/ethics misalignment — board claims no material issue found, but the specific trigger was never disclosed, leaving unresolved ambiguity.",
+    "CEO reappointment timeline vagueness: Multiple analysts pressed on Sashi Jagdishan's reappointment timeline (due within 7 months as of Mar-26 call); management gave no concrete timeline, only 'NRC will meet in near future.'",
+    "Unfilled ED/board commitment: Promise of an additional Whole-Time Director 'in a short time period' (Q2FY27 call) remains unfulfilled with vague language repeated across quarters.",
+    "Dubai branch litigation: Referenced in Q1FY27 call notes to accounts; management leans on an NCDRC order favorable to the bank but provides no independent detail on quantum/status of exposure.",
+    "Recurring 'wait and watch' framing on margins/LDR: Precise quarterly guidance is consistently avoided in favor of multi-quarter ranges, making accountability difficult to verify in real time.",
+    "PSL shortfall persists across at least 3 years (weaker section/SMF) without full resolution, addressed only through market-purchased instruments (PSLCs/IBPC)."
+  ],
+  "commitments": [
+    {
+      "quarter": "Q4FY25 (Jan-25)",
+      "commitment": "Bring CD ratio down from ~110% (merger) glide path toward ~95% by FY25-end",
+      "status": "Met",
+      "evidence": "Q1FY26 call confirms CD ratio at ~96% as of March 2025"
+    },
+    {
+      "quarter": "Q1FY26 (Apr-25)",
+      "commitment": "Grow loans in line with system in FY26, faster than system in FY27",
+      "status": "Under Execution",
+      "evidence": "Reiterated in Q2FY26, Q3FY26, Q4FY26 calls; FY26 loan growth reported at 12% vs system's ~10.5-11.5% (Q1FY27 call), suggesting outperformance already, ahead of FY27 target"
+    },
+    {
+      "quarter": "Q1FY26 (Apr-25)",
+      "commitment": "LDR to reach 85-90% by FY27",
+      "status": "Under Execution",
+      "evidence": "Reaffirmed across Q2FY26/Q3FY26/Q4FY26 calls as '1-2 years out'; not yet achieved as of Q1FY27"
+    },
+    {
+      "quarter": "Q2FY26 (Jul-25)",
+      "commitment": "Margins to stabilize as EBLR repricing plays through (June 2025 rate cut)",
+      "status": "Partially Completed",
+      "evidence": "Q3FY26 call shows NIM compressed 8bps; cost of funds improving only gradually (6-quarter lag cited)"
+    },
+    {
+      "quarter": "Q3FY26 (Oct-25)",
+      "commitment": "Exit NIM to match/improve on last year's Q4 core margins",
+      "status": "Under Execution",
+      "evidence": "Q4FY26 call shows continued margin drop due to faster yield transmission vs deposit costs; not yet confirmed met"
+    },
+    {
+      "quarter": "Q4FY26 (Jan-26)",
+      "commitment": "Agri portfolio regulatory compliance provisioning (~₹5bn) fully absorbed, no recurring impact expected",
+      "status": "Met",
+      "evidence": "Provision taken in Dec-25 quarter, management stated it was one-time and subsumed in results"
+    },
+    {
+      "quarter": "Q4FY26 (Jan-26)",
+      "commitment": "CD ratio to continue downward glide, reach low-90s/90s range in FY26",
+      "status": "Met",
+      "evidence": "Management stated FY26 range of 90-96% achieved as guided"
+    },
+    {
+      "quarter": "FY25 annual (Q1FY27 call)",
+      "commitment": "System credit growth estimate 10.5-11.5% for FY26",
+      "status": "Met",
+      "evidence": "Actual system growth came in at 12%, bank's own guidance range was close; bank itself grew 12%"
+    },
+    {
+      "quarter": "Q3FY26 (Oct-25)",
+      "commitment": "Additional Whole-Time Director appointment to strengthen board",
+      "status": "Not Met",
+      "evidence": "Still pending as of Q2FY27 call ('wait for the same'), no concrete appointment announced across multiple quarters"
+    },
+    {
+      "quarter": "Q4FY26 (Mar-26, crisis call)",
+      "commitment": "Legal review of Chairman resignation matter to be shared with stakeholders",
+      "status": "Under Execution",
+      "evidence": "Q1FY27 call states 'legal review... is in process,' no summary provided yet"
+    },
+    {
+      "quarter": "Q1FY26 (Apr-25)",
+      "commitment": "Priority sector lending (PSL) shortfall in SMF/weaker section to be closed via market instruments",
+      "status": "Partially Completed",
+      "evidence": "Recurring theme across Q4FY25, Q1FY26 calls — shortfall (~1%) persists, management says 'endeavor' but not resolved"
+    },
+    {
+      "quarter": "Q2FY26 (Jul-25)",
+      "commitment": "Deposit growth to continue gaining market share (30-50bps/year)",
+      "status": "Met",
+      "evidence": "Q1FY27 call confirms FY26 household/retail deposit accretion share rose to 47% from 31%, market share gains reaffirmed"
+    }
+  ],
+  "timeline": [
+    {
+      "quarter": "Q2FY27 (Jul-26)",
+      "score": 6,
+      "note": "Positive tone on advances/FCNR opportunity, but ED appointment and post-crisis stabilization still pending; management transparent about competitive NIM pressure."
+    },
+    {
+      "quarter": "Q1FY27 (Apr-26)",
+      "score": 6,
+      "note": "Strong headline FY26 numbers (12% loan growth, deposit share gains) but overshadowed by unresolved Chairman resignation legal review and Dubai matter; commentary transparent but incomplete."
+    },
+    {
+      "quarter": "Q4FY26 crisis call (Mar-26)",
+      "score": 5,
+      "note": "Crisis management handled with speed (RBI approval same-day) and reassurance, but specific trigger for resignation never disclosed, leaving credibility questions."
+    },
+    {
+      "quarter": "Q4FY26 regular call (Jan-26)",
+      "score": 7,
+      "note": "Met agri provisioning commitment, CD ratio glide path on track, credit growth beating expectations; some shortfall acknowledged on deposit ambitions."
+    },
+    {
+      "quarter": "Q3FY26 (Oct-25)",
+      "score": 7,
+      "note": "Transparent on one-off recovery item (10bps), consistent margin/LDR framework, capital discipline explained credibly."
+    },
+    {
+      "quarter": "Q2FY26 (Jul-25)",
+      "score": 7,
+      "note": "Clear articulation of deliberate growth slowdown (CD ratio priority), bonus issue announced, consistent narrative with prior quarters."
+    },
+    {
+      "quarter": "Q1FY26 (Apr-25)",
+      "score": 7,
+      "note": "Steady delivery on CD ratio target (96% achieved as promised), granular explanation of margin mechanics, PSL shortfall admitted but unresolved."
+    },
+    {
+      "quarter": "Q4FY25 (Jan-25)",
+      "score": 7,
+      "note": "Baseline guidance-setting call; deposit growth strong (15%), NPA/credit cost transparency good, contingent provision release well-explained."
+    }
+  ],
+  "summary": "HDFC Bank's management has generally delivered on medium-term, directionally-framed guidance (CD ratio glide path, deposit-led growth, cost discipline, asset quality) but avoids precise quarter-level commitments. Credibility took a hit in Q4FY26/Q1FY27 due to the abrupt Chairman resignation, Dubai branch litigation, and management transition uncertainty, despite proactive disclosure and regulatory backing.",
+  "transcriptCount": 8,
+  "scoredAt": "2026-08-15T15:25:21.879Z"
+}
