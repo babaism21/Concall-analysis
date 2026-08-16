@@ -10,6 +10,7 @@
     "get": "tsx src/cli.ts get",
     "serve": "tsx src/cli.ts serve",
     "dev": "tsx src/cli.ts serve",
+    "worker": "tsx src/cli.ts worker",
     "migrate:pg": "tsx src/cli.ts migrate:pg"
   },
   "dependencies": {

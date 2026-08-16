@@ -26,7 +26,14 @@ export type TimelineEntry = {
 /** UI card that deep-links into a transcript. */
 export type Insight = {
   id: string;
-  kind: "delivered" | "missed" | "open" | "risk" | "guidance";
+  kind:
+    | "delivered"
+    | "missed"
+    | "open"
+    | "risk"
+    | "guidance"
+    | "positive"
+    | "negative";
   title: string;
   body: string;
   quarter: string;
@@ -234,10 +241,21 @@ export function attachTranscriptAnchors(
     byQuarter.set(t.fyQuarter, list);
   }
 
-  const pickTranscript = (quarterLabel: string): TranscriptRef | undefined => {
+  const pickTranscript = (
+    quarterLabel: string,
+    callDate?: string,
+    sourceUrl?: string
+  ): TranscriptRef | undefined => {
+    if (sourceUrl) {
+      const byUrl = transcripts.find((t) => t.sourceUrl === sourceUrl);
+      if (byUrl) return byUrl;
+    }
+    if (callDate) {
+      const byDate = transcripts.find((t) => t.callDate === callDate);
+      if (byDate) return byDate;
+    }
     const q = quarterLabel.match(/Q[1-4]FY\d{2}/i)?.[0]?.toUpperCase();
     if (q && byQuarter.has(q)) return byQuarter.get(q)![0];
-    // fallback: newest
     return transcripts[0];
   };
 
@@ -288,7 +306,7 @@ export function attachTranscriptAnchors(
   }
 
   const commitments = portfolio.commitments.map((c) => {
-    const t = pickTranscript(c.quarter);
+    const t = pickTranscript(c.quarter, c.callDate, c.sourceUrl);
     const baseQuote = (c.quote || c.evidence || "").trim();
     const anchored = resolveAnchor(t, baseQuote, [c.commitment, c.evidence, baseQuote]);
     return {
@@ -306,7 +324,7 @@ export function attachTranscriptAnchors(
       : buildInsightsFromCommitments(commitments, portfolio.redFlags);
 
   insights = insights.map((ins, i) => {
-    const t = pickTranscript(ins.quarter) ?? transcripts[0];
+    const t = pickTranscript(ins.quarter, ins.callDate, ins.sourceUrl) ?? transcripts[0];
     const baseQuote = (ins.quote || ins.body || "").trim();
     const anchored = resolveAnchor(t, baseQuote, [ins.title, ins.body, baseQuote]);
     return {

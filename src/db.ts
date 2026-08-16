@@ -50,6 +50,34 @@ export function getDb(): DatabaseSync {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS call_extracts (
+      text_sha256 TEXT NOT NULL,
+      prompt_version TEXT NOT NULL,
+      symbol TEXT NOT NULL,
+      call_date TEXT NOT NULL,
+      fy_quarter TEXT,
+      source_url TEXT NOT NULL,
+      extract_json TEXT NOT NULL,
+      model_id TEXT,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (text_sha256, prompt_version)
+    );
+    CREATE INDEX IF NOT EXISTS idx_call_extracts_symbol ON call_extracts(symbol);
+
+    CREATE TABLE IF NOT EXISTS analysis_jobs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      symbol TEXT NOT NULL,
+      job_type TEXT NOT NULL DEFAULT 'analyze',
+      status TEXT NOT NULL DEFAULT 'queued',
+      force INTEGER NOT NULL DEFAULT 0,
+      error_message TEXT,
+      result_json TEXT,
+      created_at TEXT NOT NULL,
+      started_at TEXT,
+      completed_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_analysis_jobs_status ON analysis_jobs(status);
   `);
   return db;
 }

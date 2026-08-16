@@ -6,6 +6,8 @@ import { analyzeSymbol, getAnalysis } from "./analyze/run.ts";
 import { refreshSymbol } from "./ingest/refresh.ts";
 import { startServer } from "./api/server.ts";
 import { migrateSqliteToPostgres } from "./db/migrate.ts";
+import { runWorkerLoopOnce } from "./jobs/worker.ts";
+import { enqueueAnalyzeJob } from "./jobs/queue.ts";
 
 function loadEnv() {
   const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -31,10 +33,11 @@ function loadEnv() {
 function usage() {
   console.log(`Usage:
   npm run ingest -- SYMBOL
-  npm run reparse -- SYMBOL   # force full PDF→text refresh (fixes old truncation)
-  npm run analyze -- SYMBOL [--force]
+  npm run reparse -- SYMBOL   # force full PDF→text refresh
+  npm run analyze -- SYMBOL [--force]   # incremental (hash cache); --force re-LLMs all
   npm run get -- SYMBOL
-  npm run serve
+  npm run serve               # API + background analyze worker
+  npm run worker              # drain analyze job queue once
   npm run migrate:pg
 `);
 }
@@ -64,6 +67,23 @@ async function main() {
 
   if (cmd === "migrate:pg") {
     await migrateSqliteToPostgres();
+    return;
+  }
+
+  if (cmd === "worker") {
+    await runWorkerLoopOnce();
+    return;
+  }
+
+  if (cmd === "enqueue") {
+    const force = rest.includes("--force");
+    const symbol = rest.find((a) => !a.startsWith("--"));
+    if (!symbol) {
+      usage();
+      process.exit(1);
+    }
+    const job = enqueueAnalyzeJob(symbol, { force });
+    console.log(JSON.stringify(job, null, 2));
     return;
   }
 

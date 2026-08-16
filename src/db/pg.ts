@@ -106,6 +106,20 @@ export async function initPgSchema(): Promise<void> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     CREATE INDEX IF NOT EXISTS idx_jobs_symbol ON jobs(symbol);
+
+    CREATE TABLE IF NOT EXISTS call_extracts (
+      text_sha256 TEXT NOT NULL,
+      prompt_version TEXT NOT NULL,
+      symbol TEXT NOT NULL,
+      call_date TEXT NOT NULL,
+      fy_quarter TEXT,
+      source_url TEXT NOT NULL,
+      extract_json JSONB NOT NULL,
+      model_id TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (text_sha256, prompt_version)
+    );
+    CREATE INDEX IF NOT EXISTS idx_call_extracts_symbol ON call_extracts(symbol);
   `);
   schemaReady = true;
 }

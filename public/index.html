@@ -227,6 +227,8 @@
       .tag.open { background: #1c2740; color: var(--open); }
       .tag.risk { background: #3a2818; color: var(--risk); }
       .tag.guidance { background: #243040; color: var(--accent); }
+      .tag.positive { background: #163528; color: #7dcea0; }
+      .tag.negative { background: #3a1c1c; color: #f1948a; }
       .qtr { color: var(--muted); font-size: 0.78rem; }
       .card strong { display: block; font-size: 0.92rem; margin-bottom: 4px; }
       .card p { margin: 0; color: var(--muted); font-size: 0.84rem; line-height: 1.4; }
@@ -301,7 +303,7 @@
   <body>
     <div class="shell">
       <h1>Management Health</h1>
-      <p class="sub">Promised vs delivered across recent concalls — click a card to jump into the transcript.</p>
+      <p class="sub">Quarter-level updates (positive / negative) plus management promise tracking — click a card to jump into the transcript.</p>
       <form class="top" id="f">
         <input id="symbol" placeholder="HDFCBANK" value="HDFCBANK" required />
         <button type="submit">Show</button>
@@ -311,7 +313,7 @@
       <div class="layout" id="layout" hidden>
         <section class="col">
           <div class="col-h">
-            <h2>Promised vs delivered</h2>
+            <h2>Quarter updates &amp; promises</h2>
             <div class="chips" id="chips"></div>
           </div>
           <div class="cards" id="cards"></div>
@@ -378,9 +380,19 @@
       }
 
       function counts(cards) {
-        const c = { all: cards.length, delivered: 0, missed: 0, open: 0, risk: 0 };
+        const c = {
+          all: cards.length,
+          positive: 0,
+          negative: 0,
+          delivered: 0,
+          missed: 0,
+          open: 0,
+          risk: 0,
+        };
         for (const x of cards) {
-          if (x.kind === "delivered") c.delivered++;
+          if (x.kind === "positive") c.positive++;
+          else if (x.kind === "negative") c.negative++;
+          else if (x.kind === "delivered") c.delivered++;
           else if (x.kind === "missed") c.missed++;
           else if (x.kind === "open") c.open++;
           else if (x.kind === "risk") c.risk++;
@@ -412,6 +424,8 @@
         const c = counts(cards);
         const items = [
           ["all", "All"],
+          ["positive", "Positive"],
+          ["negative", "Negative"],
           ["delivered", "Delivered"],
           ["missed", "Missed"],
           ["open", "Still open"],
@@ -432,14 +446,25 @@
         };
       }
 
+      function cardMatchesTranscript(card, t) {
+        if (!t) return true;
+        if (card.callDate && t.callDate && card.callDate === t.callDate) return true;
+        if (card.sourceUrl && t.sourceUrl && card.sourceUrl === t.sourceUrl) return true;
+        const q = quarterKeyFromLabel(card.quarter);
+        if (q && q === t.fyQuarter.toUpperCase()) return true;
+        return false;
+      }
+
       function filteredCardsBase() {
         let cards = cardsFromData(state.data);
-        if (state.quarterKey) {
+        const txs = state.data.transcripts || [];
+        const t = txs[state.txIndex];
+        if (state.quarterKey && t) {
           cards = cards.filter((x) => {
-            const q = quarterKeyFromLabel(x.quarter);
-            // risks with no quarter stay visible when browsing a quarter
-            if (!q) return x.kind === "risk";
-            return q === state.quarterKey;
+            if (cardMatchesTranscript(x, t)) return true;
+            if (!x.quarter && (x.kind === "risk" || x.kind === "positive" || x.kind === "negative"))
+              return true;
+            return false;
           });
         }
         return cards;
@@ -454,7 +479,10 @@
       function renderCards() {
         const cards = filteredCards();
         if (!cards.length) {
-          el("cards").innerHTML = `<div class="empty">No items for this quarter / filter.</div>`;
+          const hint = state.quarterKey
+            ? "No cards linked to this transcript yet — pick “All quarters (cards)” or re-analyze for per-quarter updates."
+            : "No items for this filter.";
+          el("cards").innerHTML = `<div class="empty">${escapeHtml(hint)}</div>`;
           return;
         }
         el("cards").innerHTML = cards

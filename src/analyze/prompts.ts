@@ -1,3 +1,106 @@
+export const PER_CALL_SYSTEM = `You are an equity research analyst reading ONE Indian earnings conference call transcript.
+Extract quarter-level operational updates and management signals.
+
+Rules:
+- Use ONLY the provided transcript. Do not invent numbers or events.
+- Every quote MUST be a verbatim substring copied from the transcript (for deep-linking in the UI).
+- Be specific: metrics, projects, timelines, order wins, margin/cashflow commentary.
+- Return ONLY valid JSON matching the schema. No markdown fences.`;
+
+export function buildPerCallPrompt(
+  symbol: string,
+  call: { fyQuarter: string; callDate: string; text: string }
+): string {
+  return `Symbol: ${symbol}
+Quarter: ${call.fyQuarter}
+Call date: ${call.callDate}
+
+Return ONLY this JSON object:
+{
+  "positive": [
+    { "title": "short headline", "body": "1-2 sentences", "quote": "verbatim ≤30 words from transcript" }
+  ],
+  "negative": [
+    { "title": "short headline", "body": "1-2 sentences", "quote": "verbatim ≤30 words from transcript" }
+  ],
+  "guidance": [
+    { "title": "short headline", "body": "new forward guidance stated on this call", "quote": "verbatim ≤30 words" }
+  ],
+  "risks": [
+    { "title": "short headline", "body": "material risk flagged on this call", "quote": "verbatim ≤30 words" }
+  ],
+  "callScore": <number 0-10: management transparency and credibility on THIS call>,
+  "summary": "2-3 sentence headline for this quarter's concall"
+}
+
+Requirements:
+- positive: exactly 3 items
+- negative: exactly 3 items
+- guidance: 0–2 items
+- risks: 0–2 items
+- Keep titles under 8 words; bodies under 120 chars; quotes under 25 words
+
+Transcript:
+${call.text}`;
+}
+
+export const SYNTHESIS_SYSTEM = `You are an equity research analyst synthesizing multiple concall summaries for one Indian stock.
+Focus on cross-quarter promise vs delivery: what management guided in earlier calls vs what they reported later.
+
+Rules:
+- Use ONLY the per-call summaries and guidance bullets provided.
+- Commitments must reference measurable prior guidance tracked across quarters.
+- Return ONLY valid JSON. No markdown fences.`;
+
+export type PerCallSummaryInput = {
+  fyQuarter: string;
+  callDate: string;
+  summary: string;
+  callScore: number;
+  guidance: Array<{ title: string; body: string }>;
+  negative: Array<{ title: string; body: string }>;
+};
+
+export function buildSynthesisPrompt(symbol: string, calls: PerCallSummaryInput[]): string {
+  const body = calls
+    .map(
+      (c, i) =>
+        `### Call ${i + 1}: ${c.fyQuarter} (${c.callDate}) — callScore ${c.callScore}
+Summary: ${c.summary}
+Guidance stated: ${c.guidance.map((g) => g.title).join("; ") || "none noted"}
+Key negatives: ${c.negative.map((n) => n.title).join("; ") || "none noted"}`
+    )
+    .join("\n\n");
+
+  return `Symbol: ${symbol}
+
+Per-call extracts (newest first):
+${body}
+
+Return ONLY this JSON:
+{
+  "summary": "3-4 sentence management health narrative across all calls",
+  "rawScore": <number 0-10 average credibility across calls>,
+  "redFlags": ["cross-quarter red flags — repeated misses, pattern of guidance cuts, governance, etc."],
+  "commitments": [
+    {
+      "quarter": "QXFYXX where promise was made",
+      "commitment": "what was promised",
+      "status": "Met|Partially Completed|Under Execution|Early Execution|Not Met",
+      "evidence": "what happened in later calls",
+      "quote": "short evidence phrase"
+    }
+  ],
+  "timeline": [
+    { "quarter": "QXFYXX", "score": <0-10>, "note": "one line" }
+  ]
+}
+
+Include 6–12 cross-quarter commitments where prior guidance can be checked against later delivery.
+Include timeline entry for each call quarter listed above.`;
+}
+
+// Legacy bulk prompts kept for reference / fallback
 export const HEALTHCHECK_SYSTEM = `You are an equity research analyst specializing in Indian listed companies.
 Analyze management credibility from earnings conference call transcripts.
 
@@ -22,7 +125,6 @@ export function buildHealthcheckUserPrompt(
   return `Symbol: ${symbol}
 
 Below are the latest conference call transcripts (newest first), cleaned.
-(Some older/longer calls may be shortened only for model context; the product stores full text.)
 
 Produce markdown with these exact sections:
 
@@ -30,26 +132,11 @@ Produce markdown with these exact sections:
 2-4 sentences on delivery credibility.
 
 ## Commitments Table
-A markdown table with columns:
 | Quarter | Commitment | Status | Evidence |
-Status must be exactly one of: Met | Partially Completed | Under Execution | Early Execution | Not Met
-Evidence must be a short verbatim quote (≤25 words) copied from the transcripts.
-
-Include 6–15 of the most material commitments spanning the provided calls. Prefer measurable guidance (growth, margins, order book, capex, launches, NPAs, etc.).
-
-## Insight Cards
-Bullet list of 8–14 recent insights (newest calls first). Each bullet:
-- **KIND** — TITLE — QUARTER — "verbatim quote ≤20 words"
-KIND is one of: DELIVERED | MISSED | OPEN | RISK | GUIDANCE
 
 ## Red Flags
-Bullet list (or "None material").
-
 ## Quarterly Timeline
-For each call (newest→oldest): one line with an implied delivery score 0–10 and a short note (beats / misses / transparency).
-
 ## Bottom Line
-One paragraph investment takeaway on management quality from these calls only.
 
 Transcripts:
 ${body}`;
@@ -63,7 +150,7 @@ export function buildJsonExtractPrompt(markdown: string): string {
   return `From this management healthcheck markdown, extract JSON:
 
 {
-  "rawScore": <number 0-10 average of quarterly timeline scores if present, else null>,
+  "rawScore": <number 0-10>,
   "redFlags": ["..."],
   "commitments": [
     {
@@ -76,7 +163,7 @@ export function buildJsonExtractPrompt(markdown: string): string {
   ],
   "insights": [
     {
-      "kind": "delivered|missed|open|risk|guidance",
+      "kind": "positive|negative|delivered|missed|open|risk|guidance",
       "title": "...",
       "body": "...",
       "quarter": "...",
