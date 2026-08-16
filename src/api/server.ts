@@ -6,6 +6,10 @@ import { analyzeSymbol, getAnalysis } from "../analyze/run.ts";
 import { refreshSymbol } from "../ingest/refresh.ts";
 import { getStock, stockToUiPayload } from "./v1/stocks.ts";
 import { isPostgresEnabled, pingPostgres } from "../db/pg.ts";
+import { enqueueAnalyzeJob, getJob } from "../jobs/queue.ts";
+import { startAnalyzeWorker } from "../jobs/worker.ts";
+import { countMissingExtracts } from "../db/extractCache.ts";
+import { loadParsedTranscripts } from "../ingest/run.ts";
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -37,6 +41,8 @@ function serveStatic(reqUrl: string, res: import("node:http").ServerResponse) {
 }
 
 export function startServer(port = PORT) {
+  startAnalyzeWorker();
+
   const server = createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
@@ -63,6 +69,17 @@ export function startServer(port = PORT) {
         return;
       }
 
+      const jobMatch = pathname.match(/^\/v1\/jobs\/(\d+)$/);
+      if (req.method === "GET" && jobMatch) {
+        const job = getJob(Number(jobMatch[1]));
+        if (!job) {
+          sendJson(res, 404, { error: "job_not_found" });
+          return;
+        }
+        sendJson(res, 200, job);
+        return;
+      }
+
       const refreshMatch = pathname.match(/^\/refresh\/([A-Za-z0-9._-]+)$/);
       if (req.method === "POST" && refreshMatch) {
         const force = url.searchParams.get("force") === "1";
@@ -74,6 +91,17 @@ export function startServer(port = PORT) {
       const analyzeMatch = pathname.match(/^\/analyze\/([A-Za-z0-9._-]+)$/);
       if (req.method === "POST" && analyzeMatch) {
         const force = url.searchParams.get("force") === "1";
+        const asyncMode = url.searchParams.get("async") === "1";
+        if (asyncMode) {
+          const job = enqueueAnalyzeJob(analyzeMatch[1], { force });
+          sendJson(res, 202, {
+            jobId: job.id,
+            symbol: job.symbol,
+            status: job.status,
+            message: "queued — poll GET /v1/jobs/:id",
+          });
+          return;
+        }
         const result = await analyzeSymbol(analyzeMatch[1], { force });
         sendJson(res, 200, result);
         return;
@@ -86,7 +114,8 @@ export function startServer(port = PORT) {
           sendJson(res, 404, { error: "not_cached", symbol: getMatch[1].toUpperCase() });
           return;
         }
-        sendJson(res, 200, cached);
+        const missing = countMissingExtracts(loadParsedTranscripts(getMatch[1]));
+        sendJson(res, 200, { ...cached, missingExtracts: missing });
         return;
       }
 
@@ -112,7 +141,7 @@ export function startServer(port = PORT) {
   server.listen(port, () => {
     console.log(`[api] listening on http://localhost:${port}`);
     console.log(
-      `[api] GET /v1/stocks/:symbol  POST /refresh/:symbol  POST /analyze/:symbol  GET /analysis/:symbol`
+      `[api] GET /v1/stocks/:symbol  POST /refresh/:symbol  POST /analyze/:symbol[?async=1]  GET /v1/jobs/:id`
     );
     console.log(`[api] USE_POSTGRES=${isPostgresEnabled()}`);
   });

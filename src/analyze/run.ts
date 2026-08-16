@@ -1,29 +1,18 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { EXAMPLES_DIR, MODEL_ID, PROMPT_VERSION, LLM_TOTAL_CHAR_BUDGET } from "../config.ts";
+import { EXAMPLES_DIR, MODEL_ID, PROMPT_VERSION } from "../config.ts";
 import { getDb, nowIso } from "../db.ts";
-import { getLlmClient } from "../llm.ts";
 import { ingestSymbol, loadParsedTranscripts } from "../ingest/run.ts";
 import { syncSymbolToPostgres } from "../db/sync.ts";
 import { getStockFromPg, isPostgresEnabled } from "../db/pg.ts";
 import { stockToAnalysisRecord } from "../db/read.ts";
+import { analyzeAllTranscripts } from "./perCall.ts";
+import { countMissingExtracts } from "../db/extractCache.ts";
 import {
-  HEALTHCHECK_SYSTEM,
-  JSON_EXTRACT_SYSTEM,
-  buildHealthcheckUserPrompt,
-  buildJsonExtractPrompt,
-} from "./prompts.ts";
-import {
-  type Commitment,
-  type Insight,
-  type PortfolioJson,
-  type TimelineEntry,
   attachTranscriptAnchors,
   buildInsightsFromCommitments,
-  normalizeStatus,
-  parseCommitmentsFromMarkdown,
-  parseRedFlagsFromMarkdown,
   scoreFromCommitments,
+  type PortfolioJson,
 } from "./score.ts";
 import type { AnalysisRecord, TranscriptPayload } from "../types.ts";
 
@@ -60,7 +49,6 @@ function getCached(symbol: string): AnalysisRecord | null {
   };
 }
 
-/** Bundled sample under examples/{SYMBOL}.json (+ optional .md). No API key. */
 function loadExample(symbol: string): AnalysisRecord | null {
   const sym = symbol.trim().toUpperCase();
   const jsonPath = join(EXAMPLES_DIR, `${sym}.json`);
@@ -138,46 +126,13 @@ function saveAnalysis(rec: Omit<AnalysisRecord, "cacheHit">) {
   );
 }
 
-function normalizeCommitments(raw: unknown[]): Commitment[] {
-  const out: Commitment[] = [];
-  for (const item of raw) {
-    if (!item || typeof item !== "object") continue;
-    const o = item as Record<string, unknown>;
-    const status = normalizeStatus(String(o.status ?? ""));
-    if (!status) continue;
-    const evidence = String(o.evidence ?? "");
-    out.push({
-      quarter: String(o.quarter ?? ""),
-      commitment: String(o.commitment ?? ""),
-      status,
-      evidence,
-      quote: String(o.quote ?? evidence),
-    });
-  }
-  return out;
-}
-
-function normalizeInsights(raw: unknown[]): Insight[] {
-  const out: Insight[] = [];
-  for (const [i, item] of raw.entries()) {
-    if (!item || typeof item !== "object") continue;
-    const o = item as Record<string, unknown>;
-    const kindRaw = String(o.kind ?? "guidance").toLowerCase();
-    const kind = (
-      ["delivered", "missed", "open", "risk", "guidance"].includes(kindRaw)
-        ? kindRaw
-        : "guidance"
-    ) as Insight["kind"];
-    out.push({
-      id: String(o.id ?? `i-${i}`),
-      kind,
-      title: String(o.title ?? ""),
-      body: String(o.body ?? o.title ?? ""),
-      quarter: String(o.quarter ?? ""),
-      quote: String(o.quote ?? o.body ?? ""),
-    });
-  }
-  return out.filter((x) => x.title || x.quote);
+function cacheIsFresh(cached: AnalysisRecord, latestUrl: string | null, transcriptCount: number): boolean {
+  return (
+    Boolean(cached.latestSourceUrl) &&
+    cached.latestSourceUrl === latestUrl &&
+    cached.promptVersion === PROMPT_VERSION &&
+    cached.transcriptCount === transcriptCount
+  );
 }
 
 function withTranscripts(rec: AnalysisRecord): AnalysisRecord {
@@ -190,7 +145,6 @@ function withTranscripts(rec: AnalysisRecord): AnalysisRecord {
     charCount: t.charCount,
   }));
   const portfolioJson = attachTranscriptAnchors(rec.portfolioJson, transcripts);
-  // Persist enriched insights back so next Show is faster / more complete
   if (
     JSON.stringify(portfolioJson.insights) !== JSON.stringify(rec.portfolioJson.insights) ||
     !rec.portfolioJson.insights?.length
@@ -205,101 +159,13 @@ function withTranscripts(rec: AnalysisRecord): AnalysisRecord {
   };
 }
 
-function extractJsonObject(text: string): Record<string, unknown> {
-  const cleaned = text.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
-  const start = cleaned.indexOf("{");
-  const end = cleaned.lastIndexOf("}");
-  if (start < 0 || end < 0) throw new Error("No JSON object in model response");
-  return JSON.parse(cleaned.slice(start, end + 1)) as Record<string, unknown>;
-}
-
-function packTranscriptsForLlm(
-  blocks: Array<{ fyQuarter: string; callDate: string; text: string }>
-): Array<{ fyQuarter: string; callDate: string; text: string }> {
-  let remaining = LLM_TOTAL_CHAR_BUDGET;
-  const out: Array<{ fyQuarter: string; callDate: string; text: string }> = [];
-  for (const b of blocks) {
-    if (remaining < 4_000) break;
-    if (b.text.length <= remaining) {
-      out.push(b);
-      remaining -= b.text.length;
-    } else {
-      out.push({
-        ...b,
-        text:
-          b.text.slice(0, remaining) +
-          "\n\n[... truncated for LLM context only — full transcript kept in UI ...]",
-      });
-      remaining = 0;
-    }
-  }
-  return out;
-}
-
-async function runLlmHealthcheck(
-  symbol: string,
-  transcripts: Array<{ fyQuarter: string; callDate: string; text: string }>
-): Promise<{ markdown: string; extracted: Record<string, unknown> }> {
-  const client = getLlmClient();
-  console.log(`[analyze] LLM healthcheck ${symbol} (${transcripts.length} calls, model=${MODEL_ID})`);
-
-  const mdResp = await client.chat.completions.create({
-    model: MODEL_ID,
-    temperature: 0.2,
-    max_tokens: 8192,
-    messages: [
-      { role: "system", content: HEALTHCHECK_SYSTEM },
-      {
-        role: "user",
-        content: buildHealthcheckUserPrompt(symbol, transcripts),
-      },
-    ],
-  });
-  const choice = mdResp.choices[0];
-  const markdown = choice?.message?.content?.trim() ?? "";
-  if (!markdown) {
-    throw new Error(
-      `Empty healthcheck markdown (finish=${choice?.finish_reason ?? "?"} refusal=${choice?.message?.refusal ?? "none"})`
-    );
-  }
-  console.log(
-    `[analyze] healthcheck tokens in=${mdResp.usage?.prompt_tokens ?? "?"} out=${mdResp.usage?.completion_tokens ?? "?"} finish=${choice?.finish_reason}`
-  );
-
-  console.log(`[analyze] LLM JSON extract ${symbol}`);
-  let extracted: Record<string, unknown> = {};
-  try {
-    const jsonResp = await client.chat.completions.create({
-      model: MODEL_ID,
-      temperature: 0,
-      max_tokens: 4096,
-      messages: [
-        { role: "system", content: JSON_EXTRACT_SYSTEM },
-        { role: "user", content: buildJsonExtractPrompt(markdown) },
-      ],
-    });
-    const raw = jsonResp.choices[0]?.message?.content?.trim() ?? "{}";
-    console.log(
-      `[analyze] json tokens in=${jsonResp.usage?.prompt_tokens ?? "?"} out=${jsonResp.usage?.completion_tokens ?? "?"} finish=${jsonResp.choices[0]?.finish_reason}`
-    );
-    extracted = extractJsonObject(raw);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.warn(`[analyze] JSON extract failed, using markdown fallback: ${msg}`);
-    extracted = {};
-  }
-  return { markdown, extracted };
-}
-
 export async function analyzeSymbol(
   symbol: string,
   opts: { force?: boolean } = {}
 ): Promise<AnalysisRecord> {
   const sym = symbol.trim().toUpperCase();
-  console.log(`[analyze] start ${sym} force=${Boolean(opts.force)}`);
+  console.log(`[analyze] start ${sym} force=${Boolean(opts.force)} model=${MODEL_ID} prompt=${PROMPT_VERSION}`);
 
-  // Prefer existing DB/example before network — Show path should not need this,
-  // but Update still discovers newest URL via ingest.
   let cached = getCached(sym);
   if (!cached) {
     const example = loadExample(sym);
@@ -310,8 +176,6 @@ export async function analyzeSymbol(
     }
   }
 
-  // Reparse happens automatically for any row still marked truncated (old 15k bug).
-  // Pass --force / ?force=1 to re-download+reparse everything.
   const ingest = await ingestSymbol(sym, undefined, { forceReparse: Boolean(opts.force) });
   const transcripts = loadParsedTranscripts(sym);
   const latestUrl = transcripts[0]?.sourceUrl ?? ingest.latestSourceUrl;
@@ -324,24 +188,21 @@ export async function analyzeSymbol(
     throw new Error(`No parsed transcripts for ${sym} (discovered=${ingest.discovered})`);
   }
 
-  // Same newest concall as last analysis → return cache (no LLM, no API key).
-  if (
-    !opts.force &&
-    cached &&
-    cached.latestSourceUrl &&
-    cached.latestSourceUrl === latestUrl
-  ) {
-    console.log(`[analyze] cache hit ${sym} (no new concall)`);
-    return withTranscripts({
-      ...cached,
-      cacheHit: true,
-      updateAvailable: false,
-      source: "db",
-    });
+  if (!opts.force && cached && cacheIsFresh(cached, latestUrl, transcripts.length)) {
+    const missing = countMissingExtracts(transcripts);
+    if (missing === 0) {
+      console.log(`[analyze] cache hit ${sym} (no new concall, extracts complete)`);
+      return withTranscripts({
+        ...cached,
+        cacheHit: true,
+        updateAvailable: false,
+        source: "db",
+      });
+    }
+    console.log(`[analyze] ${sym} has ${missing} missing extracts — filling gaps`);
   }
 
-  const needsLlm = true;
-  if (needsLlm && !process.env.OPENROUTER_API_KEY) {
+  if (!process.env.OPENROUTER_API_KEY) {
     if (cached) {
       console.log(
         `[analyze] update available for ${sym} but no OPENROUTER_API_KEY — returning stale cache`
@@ -354,80 +215,52 @@ export async function analyzeSymbol(
       });
     }
     throw new Error(
-      "No saved analysis yet. Set OPENROUTER_API_KEY in .env to run the first analysis (then it is cached until a new concall)."
+      "No saved analysis yet. Set OPENROUTER_API_KEY in .env to run the first analysis."
     );
   }
 
   console.log(
-    `[analyze] cache miss ${sym} — running LLM model=${MODEL_ID} (force=${Boolean(opts.force)} priorUrl=${cached?.latestSourceUrl ?? "none"} newUrl=${latestUrl})`
+    `[analyze] incremental ${sym} — ${transcripts.length} transcripts (force=${Boolean(opts.force)} missing=${countMissingExtracts(transcripts)})`
   );
 
-  // Pack newest-first into a total char budget. UI still has full texts in DB.
-  const packed = packTranscriptsForLlm(
-    transcripts.map((t) => ({
-      fyQuarter: t.fyQuarter,
-      callDate: t.callDate,
-      text: t.text,
-    }))
+  const blocks = transcripts.map((t) => ({
+    fyQuarter: t.fyQuarter,
+    callDate: t.callDate,
+    sourceUrl: t.sourceUrl,
+    text: t.text,
+  }));
+
+  const { perCalls, synthesis, allInsights, llmCalls, cacheHits } = await analyzeAllTranscripts(
+    sym,
+    blocks,
+    { force: Boolean(opts.force) }
   );
-  console.log(
-    `[analyze] LLM pack: ${packed.map((p) => `${p.fyQuarter}:${p.text.length}`).join(", ")} (budget=${LLM_TOTAL_CHAR_BUDGET})`
-  );
 
-  const { markdown, extracted } = await runLlmHealthcheck(sym, packed);
-
-  let commitments = normalizeCommitments(
-    Array.isArray(extracted.commitments) ? (extracted.commitments as unknown[]) : []
-  );
-  if (commitments.length < 3) {
-    commitments = parseCommitmentsFromMarkdown(markdown);
-  }
-
-  let redFlags = Array.isArray(extracted.redFlags)
-    ? (extracted.redFlags as unknown[]).map(String)
-    : [];
-  if (!redFlags.length) redFlags = parseRedFlagsFromMarkdown(markdown);
-
-  let insights = normalizeInsights(
-    Array.isArray(extracted.insights) ? (extracted.insights as unknown[]) : []
-  );
-  if (insights.length < 4) {
-    insights = buildInsightsFromCommitments(commitments, redFlags);
-  }
-
-  const timeline = Array.isArray(extracted.timeline)
-    ? (extracted.timeline as unknown[])
-        .map((t) => {
-          const o = t as Record<string, unknown>;
-          return {
-            quarter: String(o.quarter ?? ""),
-            score: Number(o.score ?? 0),
-            note: String(o.note ?? ""),
-          } satisfies TimelineEntry;
-        })
-        .filter((t) => t.quarter)
-    : [];
-
-  const { healthScore, label } = scoreFromCommitments(commitments);
-  const rawScore =
-    typeof extracted.rawScore === "number"
-      ? extracted.rawScore
-      : timeline.length
-        ? Math.round(
-            (timeline.reduce((a, b) => a + b.score, 0) / timeline.length) * 10
-          ) / 10
-        : null;
+  const { healthScore, label } = scoreFromCommitments(synthesis.commitments);
+  const scored =
+    synthesis.commitments.length > 0
+      ? { healthScore, label }
+      : {
+          healthScore: Math.round(
+            (perCalls.reduce((a, c) => a + c.callScore, 0) / perCalls.length) * 10
+          ),
+          label: (perCalls.reduce((a, c) => a + c.callScore, 0) / perCalls.length >= 7.5
+            ? "Good"
+            : perCalls.reduce((a, c) => a + c.callScore, 0) / perCalls.length >= 5
+              ? "Average"
+              : "Weak") as PortfolioJson["label"],
+        };
 
   let portfolioJson: PortfolioJson = {
     symbol: sym,
-    healthScore,
-    label,
-    rawScore,
-    redFlags,
-    commitments,
-    insights,
-    timeline,
-    summary: String(extracted.summary ?? "").trim(),
+    healthScore: scored.healthScore,
+    label: scored.label,
+    rawScore: synthesis.rawScore,
+    redFlags: synthesis.redFlags,
+    commitments: synthesis.commitments,
+    insights: allInsights,
+    timeline: synthesis.timeline,
+    summary: synthesis.summary,
     transcriptCount: transcripts.length,
     latestSourceUrl: latestUrl,
     scoredAt: nowIso(),
@@ -437,7 +270,7 @@ export async function analyzeSymbol(
   const createdAt = cached?.createdAt ?? nowIso();
   const record: Omit<AnalysisRecord, "cacheHit" | "source" | "updateAvailable" | "transcripts"> = {
     symbol: sym,
-    markdown,
+    markdown: synthesis.markdown,
     portfolioJson,
     latestSourceUrl: latestUrl,
     transcriptCount: transcripts.length,
@@ -453,9 +286,12 @@ export async function analyzeSymbol(
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[analyze] Postgres sync failed for ${sym}: ${msg}`);
   }
+
+  const byCall = perCalls.map((c) => `${c.fyQuarter}:${c.insights.length}`).join(", ");
   console.log(
-    `[analyze] saved ${sym} score=${healthScore} (${label}) commitments=${commitments.length} insights=${insights.length}`
+    `[analyze] saved ${sym} score=${scored.healthScore} (${scored.label}) insights=${allInsights.length} llm=${llmCalls} cacheHits=${cacheHits} per-call=[${byCall}]`
   );
+
   return withTranscripts({
     ...record,
     cacheHit: false,
@@ -464,11 +300,6 @@ export async function analyzeSymbol(
   });
 }
 
-/**
- * Read-only. Never calls the LLM.
- * Order: Postgres (when enabled) → SQLite → bundled examples.
- * Always attaches transcript texts + quote char offsets.
- */
 export async function getAnalysis(symbol: string): Promise<AnalysisRecord | null> {
   const sym = symbol.trim().toUpperCase();
 
