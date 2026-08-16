@@ -3,15 +3,17 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ingestSymbol } from "./ingest/run.ts";
 import { analyzeSymbol, getAnalysis } from "./analyze/run.ts";
-import { refreshSymbol } from "./ingest/refresh.ts";
 import { startServer } from "./api/server.ts";
 import { migrateSqliteToPostgres } from "./db/migrate.ts";
 import { runWorkerLoopOnce } from "./jobs/worker.ts";
 import { enqueueAnalyzeJob } from "./jobs/queue.ts";
+import { runBackfill, type BackfillMode } from "./backfill.ts";
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const DEFAULT_UNIVERSE = join(ROOT, "config/universe.txt");
 
 function loadEnv() {
-  const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-  const envPath = join(root, ".env");
+  const envPath = join(ROOT, ".env");
   if (!existsSync(envPath)) return;
   for (const line of readFileSync(envPath, "utf8").split("\n")) {
     const trimmed = line.trim();
@@ -33,19 +35,26 @@ function loadEnv() {
 function usage() {
   console.log(`Usage:
   npm run ingest -- SYMBOL
-  npm run reparse -- SYMBOL   # force full PDF→text refresh
-  npm run analyze -- SYMBOL [--force]   # incremental (hash cache); --force re-LLMs all
+  npm run reparse -- SYMBOL
+  npm run analyze -- SYMBOL [--force]   # incremental hash cache; --force re-LLMs all
   npm run get -- SYMBOL
-  npm run serve               # API + background analyze worker
-  npm run worker              # drain analyze job queue once
+  npm run serve                         # API + background analyze worker
+  npm run worker                        # drain analyze job queue once
+  npm run enqueue -- SYMBOL [--force]
+  npm run backfill -- status|enqueue|refresh [--file path] [--limit N] [--force]
   npm run migrate:pg
 `);
 }
 
+function parseFlag(args: string[], name: string): string | undefined {
+  const idx = args.indexOf(name);
+  if (idx < 0) return undefined;
+  return args[idx + 1];
+}
+
 async function main() {
   loadEnv();
-  // Also try sibling portfolio .env for local dogfood (never committed here)
-  const portfolioEnv = join(dirname(fileURLToPath(import.meta.url)), "../../.env");
+  const portfolioEnv = join(ROOT, "../.env");
   if (existsSync(portfolioEnv) && !process.env.OPENROUTER_API_KEY) {
     for (const line of readFileSync(portfolioEnv, "utf8").split("\n")) {
       const trimmed = line.trim();
@@ -72,6 +81,27 @@ async function main() {
 
   if (cmd === "worker") {
     await runWorkerLoopOnce();
+    return;
+  }
+
+  if (cmd === "backfill") {
+    const modeRaw = rest.find((a) => !a.startsWith("--")) ?? "status";
+    if (!["status", "enqueue", "refresh"].includes(modeRaw)) {
+      console.error(`Unknown backfill mode: ${modeRaw}`);
+      usage();
+      process.exit(1);
+    }
+    const file = parseFlag(rest, "--file") ?? DEFAULT_UNIVERSE;
+    const limitRaw = parseFlag(rest, "--limit");
+    const limit = limitRaw ? Number(limitRaw) : undefined;
+    const force = rest.includes("--force");
+    const result = await runBackfill({
+      file,
+      mode: modeRaw as BackfillMode,
+      force,
+      limit,
+    });
+    console.log(JSON.stringify(result, null, 2));
     return;
   }
 
@@ -118,6 +148,7 @@ async function main() {
           rawScore: result.portfolioJson.rawScore,
           redFlags: result.portfolioJson.redFlags,
           commitments: result.portfolioJson.commitments.length,
+          insights: result.portfolioJson.insights?.length ?? 0,
           transcriptCount: result.transcriptCount,
         },
         null,

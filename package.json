@@ -11,6 +11,8 @@
     "serve": "tsx src/cli.ts serve",
     "dev": "tsx src/cli.ts serve",
     "worker": "tsx src/cli.ts worker",
+    "enqueue": "tsx src/cli.ts enqueue",
+    "backfill": "tsx src/cli.ts backfill",
     "migrate:pg": "tsx src/cli.ts migrate:pg"
   },
   "dependencies": {

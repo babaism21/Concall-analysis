@@ -1,0 +1,22 @@
+# Liquid Indian equities for Phase-2 dogfood backfill (~20 names).
+# One symbol per line. Lines starting with # are ignored.
+HDFCBANK
+IDFCFIRSTB
+POWERMECH
+WABAG
+VIDYAWIRES
+RELIANCE
+TCS
+INFY
+ICICIBANK
+SBIN
+BHARTIARTL
+ITC
+LT
+AXISBANK
+KOTAKBANK
+HINDUNILVR
+BAJFINANCE
+ASIANPAINT
+MARUTI
+TITAN
