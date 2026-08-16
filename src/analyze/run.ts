@@ -161,7 +161,7 @@ function withTranscripts(rec: AnalysisRecord): AnalysisRecord {
 
 export async function analyzeSymbol(
   symbol: string,
-  opts: { force?: boolean } = {}
+  opts: { force?: boolean; skipIngest?: boolean } = {}
 ): Promise<AnalysisRecord> {
   const sym = symbol.trim().toUpperCase();
   console.log(`[analyze] start ${sym} force=${Boolean(opts.force)} model=${MODEL_ID} prompt=${PROMPT_VERSION}`);
@@ -176,16 +176,26 @@ export async function analyzeSymbol(
     }
   }
 
-  const ingest = await ingestSymbol(sym, undefined, { forceReparse: Boolean(opts.force) });
-  const transcripts = loadParsedTranscripts(sym);
-  const latestUrl = transcripts[0]?.sourceUrl ?? ingest.latestSourceUrl;
+  // Prefer local transcripts for extract fill / cache hits. Only hit Screener when needed.
+  let transcripts = loadParsedTranscripts(sym);
+  const shouldIngest =
+    !opts.skipIngest && (Boolean(opts.force) || transcripts.length === 0 || !cached);
+
+  let latestUrl = transcripts[0]?.sourceUrl ?? cached?.latestSourceUrl ?? null;
+  if (shouldIngest) {
+    const ingest = await ingestSymbol(sym, undefined, { forceReparse: Boolean(opts.force) });
+    transcripts = loadParsedTranscripts(sym);
+    latestUrl = transcripts[0]?.sourceUrl ?? ingest.latestSourceUrl;
+  } else {
+    console.log(`[analyze] skip Screener ingest ${sym} (local transcripts=${transcripts.length})`);
+  }
 
   if (!transcripts.length) {
     if (cached) {
       console.log(`[analyze] no transcripts; returning prior cache for ${sym}`);
       return withTranscripts({ ...cached, cacheHit: true, updateAvailable: false });
     }
-    throw new Error(`No parsed transcripts for ${sym} (discovered=${ingest.discovered})`);
+    throw new Error(`No parsed transcripts for ${sym}`);
   }
 
   if (!opts.force && cached && cacheIsFresh(cached, latestUrl, transcripts.length)) {

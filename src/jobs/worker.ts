@@ -9,7 +9,11 @@ async function processOne(): Promise<boolean> {
   if (!job) return false;
   console.log(`[worker] job #${job.id} analyze ${job.symbol} force=${job.force}`);
   try {
-    const result = await analyzeSymbol(job.symbol, { force: job.force });
+    // Skip Screener when filling extracts from local PDFs (jobs are offline-friendly).
+    const result = await analyzeSymbol(job.symbol, {
+      force: job.force,
+      skipIngest: !job.force,
+    });
     completeJob(job.id, {
       symbol: result.symbol,
       healthScore: result.portfolioJson.healthScore,
