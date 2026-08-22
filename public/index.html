@@ -44,7 +44,7 @@
       .shell {
         max-width: 1280px;
         margin: 0 auto;
-        padding: 16px 18px 12px;
+        padding: 10px 14px 8px;
         height: 100vh;
         height: 100dvh;
         display: flex;
@@ -54,40 +54,43 @@
       h1 {
         font-family: "Instrument Serif", Georgia, serif;
         font-weight: 400;
-        font-size: 1.85rem;
-        margin: 0 0 4px;
+        font-size: 1.35rem;
+        margin: 0;
         letter-spacing: -0.02em;
-        flex-shrink: 0;
+        line-height: 1.2;
       }
-      .sub { color: var(--muted); margin: 0 0 12px; font-size: 0.9rem; flex-shrink: 0; }
+      .sub { display: none; }
       .top {
         display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
+        gap: 8px;
+        flex-wrap: nowrap;
         align-items: center;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
         flex-shrink: 0;
       }
+      .top h1 { flex-shrink: 0; margin-right: 4px; }
       input {
         flex: 1;
-        min-width: 140px;
+        min-width: 100px;
         background: var(--panel);
         border: 1px solid var(--border);
         color: var(--text);
-        border-radius: 10px;
-        padding: 12px 14px;
-        font-size: 1rem;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 0.95rem;
         text-transform: uppercase;
       }
       button {
         background: var(--accent);
         color: #041018;
         border: 0;
-        border-radius: 10px;
-        padding: 12px 16px;
+        border-radius: 8px;
+        padding: 8px 14px;
         font-weight: 600;
         cursor: pointer;
         font-family: inherit;
+        font-size: 0.9rem;
+        white-space: nowrap;
       }
       button.secondary {
         background: transparent;
@@ -95,50 +98,135 @@
         border: 1px solid var(--border);
       }
       button:disabled { opacity: 0.55; cursor: wait; }
+      #score:empty { display: none; }
       .score-row {
         display: flex;
-        gap: 18px;
+        gap: 10px;
         align-items: center;
         background: var(--panel);
         border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 12px 16px;
-        margin-bottom: 12px;
+        border-radius: 10px;
+        padding: 6px 10px;
+        margin-bottom: 8px;
         flex-shrink: 0;
       }
       .gauge {
-        width: 72px;
-        height: 72px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         display: grid;
         place-items: center;
-        font-size: 1.35rem;
+        font-size: 0.95rem;
         font-weight: 700;
-        border: 3px solid var(--border);
+        border: 2px solid var(--border);
         flex-shrink: 0;
       }
       .gauge.Good { border-color: var(--good); color: var(--good); }
       .gauge.Average { border-color: var(--avg); color: var(--avg); }
       .gauge.Weak { border-color: var(--weak); color: var(--weak); }
-      .meta { color: var(--muted); font-size: 0.88rem; }
+      .score-main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+      }
+      .score-title {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 8px;
+        align-items: baseline;
+        font-size: 0.92rem;
+        flex-shrink: 0;
+      }
+      .score-title .qtr-pill {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 1px 7px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--panel2);
+        color: var(--text);
+      }
+      .score-title .trend {
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .score-title .trend.up { color: var(--good); }
+      .score-title .trend.down { color: var(--weak); }
+      .score-title .trend.flat { color: var(--muted); }
+      .meta {
+        color: var(--muted);
+        font-size: 0.7rem;
+        white-space: nowrap;
+      }
+      .qtr-history {
+        display: flex;
+        gap: 4px;
+        overflow-x: auto;
+        padding: 0;
+        margin: 0;
+        scrollbar-width: thin;
+        flex: 1 1 180px;
+        min-width: 0;
+        align-items: center;
+      }
+      .qtr-chip {
+        flex: 0 0 auto;
+        border: 1px solid var(--border);
+        background: var(--panel2);
+        color: var(--text);
+        border-radius: 7px;
+        padding: 3px 7px;
+        cursor: pointer;
+        text-align: left;
+        min-width: 0;
+        font: inherit;
+        line-height: 1.15;
+      }
+      .qtr-chip:hover { border-color: var(--accent); }
+      .qtr-chip.on {
+        border-color: var(--accent);
+        background: #1a2a3a;
+      }
+      .qtr-chip .q { font-size: 0.6rem; color: var(--muted); display: inline; margin-right: 4px; }
+      .qtr-chip .s {
+        font-size: 0.85rem;
+        font-weight: 700;
+        display: inline;
+      }
+      .qtr-chip .s.Good { color: var(--good); }
+      .qtr-chip .s.Average { color: var(--avg); }
+      .qtr-chip .s.Weak { color: var(--weak); }
+      .qtr-chip .delta {
+        font-size: 0.6rem;
+        color: var(--muted);
+        margin-left: 3px;
+      }
+      .qtr-chip .delta.up { color: var(--good); }
+      .qtr-chip .delta.down { color: var(--weak); }
       .layout {
         display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
-        gap: 14px;
+        grid-template-columns: 1fr;
+        gap: 10px;
         flex: 1 1 auto;
         min-height: 0;
-        height: 0; /* force flex child to take remaining viewport — enables inner scroll */
+        height: 0;
         align-items: stretch;
+      }
+      .layout.tx-open {
+        grid-template-columns: 1fr 1fr;
       }
       @media (max-width: 960px) {
         html, body { overflow: auto; height: auto; }
         .shell { height: auto; overflow: auto; }
-        .layout { grid-template-columns: 1fr; height: auto; min-height: 70vh; }
+        .layout, .layout.tx-open { grid-template-columns: 1fr; height: auto; min-height: 50vh; }
       }
       .col {
         background: var(--panel);
         border: 1px solid var(--border);
-        border-radius: 14px;
+        border-radius: 12px;
         overflow: hidden;
         display: flex;
         flex-direction: column;
@@ -147,15 +235,17 @@
         max-height: 100%;
       }
       .col.transcript-col {
-        position: sticky;
-        top: 0;
+        display: none;
+      }
+      .layout.tx-open .col.transcript-col {
+        display: flex;
       }
       .col-h {
-        padding: 12px 14px;
+        padding: 8px 12px;
         border-bottom: 1px solid var(--border);
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
         align-items: center;
         justify-content: space-between;
         flex-shrink: 0;
@@ -163,32 +253,41 @@
       }
       .col-h h2 {
         margin: 0;
-        font-size: 0.95rem;
+        font-size: 0.85rem;
         font-weight: 600;
         letter-spacing: 0.02em;
       }
-      .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+      .tx-close {
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid var(--border);
+        padding: 4px 10px;
+        font-size: 0.78rem;
+        border-radius: 6px;
+      }
+      .tx-close:hover { color: var(--text); border-color: var(--accent); }
+      .chips { display: flex; flex-wrap: wrap; gap: 5px; }
       .chip {
         border: 1px solid var(--border);
         background: var(--panel2);
         color: var(--muted);
         border-radius: 999px;
-        padding: 5px 10px;
-        font-size: 0.78rem;
+        padding: 4px 9px;
+        font-size: 0.75rem;
         cursor: pointer;
       }
       .chip.on { color: var(--text); border-color: var(--accent); background: #1a2a3a; }
       .chip .n {
         display: inline-block;
-        margin-left: 4px;
+        margin-left: 3px;
         opacity: 0.75;
       }
       .cards {
-        padding: 10px;
+        padding: 8px;
         overflow: auto;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
         flex: 1;
         min-height: 0;
       }
@@ -196,8 +295,8 @@
         text-align: left;
         background: var(--panel2);
         border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 12px 12px 10px;
+        border-radius: 10px;
+        padding: 10px 11px 8px;
         cursor: pointer;
         color: inherit;
         font: inherit;
@@ -212,14 +311,14 @@
         justify-content: space-between;
         gap: 8px;
         align-items: baseline;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
       }
       .tag {
-        font-size: 0.68rem;
+        font-size: 0.65rem;
         font-weight: 700;
         letter-spacing: 0.04em;
         text-transform: uppercase;
-        padding: 2px 7px;
+        padding: 2px 6px;
         border-radius: 999px;
       }
       .tag.delivered { background: #163528; color: var(--good); }
@@ -229,18 +328,18 @@
       .tag.guidance { background: #243040; color: var(--accent); }
       .tag.positive { background: #163528; color: #7dcea0; }
       .tag.negative { background: #3a1c1c; color: #f1948a; }
-      .qtr { color: var(--muted); font-size: 0.78rem; }
-      .card strong { display: block; font-size: 0.92rem; margin-bottom: 4px; }
-      .card p { margin: 0; color: var(--muted); font-size: 0.84rem; line-height: 1.4; }
+      .qtr { color: var(--muted); font-size: 0.75rem; }
+      .card strong { display: block; font-size: 0.88rem; margin-bottom: 3px; }
+      .card p { margin: 0; color: var(--muted); font-size: 0.8rem; line-height: 1.35; }
       .card .jump {
-        margin-top: 8px;
+        margin-top: 6px;
         color: var(--accent);
-        font-size: 0.78rem;
+        font-size: 0.75rem;
         font-weight: 600;
       }
       .tx-tools {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         flex-wrap: wrap;
         align-items: center;
       }
@@ -248,18 +347,19 @@
         background: var(--panel2);
         color: var(--text);
         border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 6px 8px;
-        max-width: 220px;
+        border-radius: 6px;
+        padding: 4px 6px;
+        max-width: 200px;
+        font-size: 0.8rem;
       }
       .transcript {
         flex: 1 1 auto;
         overflow-x: hidden;
         overflow-y: auto;
-        padding: 14px 16px 40px;
+        padding: 12px 14px 32px;
         white-space: pre-wrap;
-        font-size: 0.88rem;
-        line-height: 1.55;
+        font-size: 0.84rem;
+        line-height: 1.5;
         color: #c9d4e0;
         min-height: 0;
         position: relative;
@@ -288,23 +388,27 @@
         text-align: center;
         font-size: 0.9rem;
       }
-      .err { color: var(--weak); margin-top: 8px; min-height: 1.2em; flex-shrink: 0; }
+      .err { color: var(--weak); margin-top: 6px; min-height: 1.1em; flex-shrink: 0; font-size: 0.85rem; }
       .hint {
         color: var(--muted);
-        font-size: 0.8rem;
-        padding: 8px 14px;
+        font-size: 0.75rem;
+        padding: 6px 12px;
         margin: 0;
         flex-shrink: 0;
         border-bottom: 1px solid var(--border);
         background: var(--panel2);
       }
+      .cards-hint {
+        color: var(--muted);
+        font-size: 0.75rem;
+        padding: 0 4px 4px;
+      }
     </style>
   </head>
   <body>
     <div class="shell">
-      <h1>Management Health</h1>
-      <p class="sub">Quarter-level updates (positive / negative) plus management promise tracking — click a card to jump into the transcript.</p>
       <form class="top" id="f">
+        <h1>Management Health</h1>
         <input id="symbol" placeholder="HDFCBANK" value="HDFCBANK" required />
         <button type="submit">Show</button>
         <button type="button" class="secondary" id="updateBtn">Check for updates</button>
@@ -313,9 +417,10 @@
       <div class="layout" id="layout" hidden>
         <section class="col">
           <div class="col-h">
-            <h2>Quarter updates &amp; promises</h2>
+            <h2>Insights</h2>
             <div class="chips" id="chips"></div>
           </div>
+          <p class="cards-hint">Click a card to open the transcript on the right.</p>
           <div class="cards" id="cards"></div>
         </section>
         <section class="col transcript-col" id="transcriptCol">
@@ -323,9 +428,10 @@
             <h2>Transcript</h2>
             <div class="tx-tools">
               <select id="txSelect" aria-label="Select quarter transcript"></select>
+              <button type="button" class="tx-close" id="txClose" title="Close transcript">Close</button>
             </div>
           </div>
-          <p class="hint" id="txHint">Click a card — this panel stays put; only the text below scrolls to the quote.</p>
+          <p class="hint" id="txHint">Passage linked from the selected insight.</p>
           <div class="transcript" id="transcript"></div>
         </section>
       </div>
@@ -336,11 +442,17 @@
         data: null,
         filter: "all",
         activeId: null,
-        quarterKey: null, // e.g. Q2FY26 — filters left cards when set via dropdown
+        quarterKey: null,
         txIndex: 0,
+        txOpen: false,
       };
 
       const el = (id) => document.getElementById(id);
+
+      function setTranscriptOpen(open) {
+        state.txOpen = Boolean(open);
+        el("layout").classList.toggle("tx-open", state.txOpen);
+      }
 
       function escapeHtml(s) {
         return String(s ?? "")
@@ -401,23 +513,172 @@
         return c;
       }
 
+      /** Timeline scores are often 0–10; UI gauge is 0–100. */
+      function toHundred(score) {
+        const n = Number(score);
+        if (!Number.isFinite(n)) return null;
+        return n <= 10 ? Math.round(n * 10) : Math.round(n);
+      }
+
+      function labelFromScore(score100) {
+        if (score100 == null) return "Weak";
+        if (score100 >= 75) return "Good";
+        if (score100 >= 50) return "Average";
+        return "Weak";
+      }
+
+      /**
+       * Build chronological quarter history (oldest → newest).
+       * Duplicate quarters (e.g. two Q4FY26 calls) are averaged.
+       */
+      function quarterHistory(data) {
+        const raw = Array.isArray(data.portfolioJson?.timeline)
+          ? data.portfolioJson.timeline
+          : [];
+        const map = new Map();
+        for (const t of raw) {
+          const q = String(t.quarter || "")
+            .match(/Q[1-4]FY\d{2}/i)?.[0]
+            ?.toUpperCase();
+          if (!q) continue;
+          const s = toHundred(t.score);
+          if (s == null) continue;
+          const prev = map.get(q);
+          if (!prev) map.set(q, { quarter: q, score: s, note: t.note || "", n: 1 });
+          else {
+            map.set(q, {
+              quarter: q,
+              score: Math.round((prev.score * prev.n + s) / (prev.n + 1)),
+              note: t.note || prev.note,
+              n: prev.n + 1,
+            });
+          }
+        }
+        // Prefer transcript order when available (newest-first in API → reverse for history)
+        const txOrder = (data.transcripts || [])
+          .map((t) => String(t.fyQuarter || "").toUpperCase())
+          .filter(Boolean);
+        const seen = new Set();
+        const ordered = [];
+        for (const q of [...txOrder].reverse()) {
+          if (seen.has(q) || !map.has(q)) continue;
+          seen.add(q);
+          ordered.push(map.get(q));
+        }
+        for (const [q, v] of map) {
+          if (!seen.has(q)) ordered.push(v);
+        }
+        return ordered.map((v, i, arr) => {
+          const prev = i > 0 ? arr[i - 1].score : null;
+          const delta = prev == null ? null : v.score - prev;
+          return { ...v, delta, label: labelFromScore(v.score) };
+        });
+      }
+
+      function activeQuarterScore(data) {
+        const hist = quarterHistory(data);
+        const j = data.portfolioJson;
+        // Prefer selected quarter; otherwise latest quarter score (overall stays in meta)
+        const pick =
+          (state.quarterKey && hist.find((h) => h.quarter === state.quarterKey)) ||
+          (hist.length ? hist[hist.length - 1] : null);
+        if (pick) {
+          return {
+            quarter: pick.quarter,
+            score: pick.score,
+            label: pick.label,
+            note: pick.note || "",
+            delta: pick.delta,
+            overall: false,
+          };
+        }
+        return {
+          quarter: state.quarterKey || "—",
+          score: j.healthScore,
+          label: j.label,
+          note: j.summary || "",
+          delta: null,
+          overall: true,
+        };
+      }
+
+      function trendText(delta) {
+        if (delta == null) return { cls: "flat", text: "—" };
+        if (delta > 0) return { cls: "up", text: `▲ +${delta} vs prior` };
+        if (delta < 0) return { cls: "down", text: `▼ ${delta} vs prior` };
+        return { cls: "flat", text: "● flat vs prior" };
+      }
+
       function renderScore(data) {
         const j = data.portfolioJson;
-        const bits = [
-          data.cacheHit ? "cached" : "fresh",
-          data.source || "",
-          data.updateAvailable ? "newer concall available" : "",
-          (data.transcripts || []).length + " transcripts loaded",
-        ].filter(Boolean);
+        const active = activeQuarterScore(data);
+        const hist = quarterHistory(data);
+        const trend = trendText(active.delta);
+
+        const historyHtml = hist.length
+          ? `<div class="qtr-history" id="qtrHistory" title="Quarter score history (oldest → newest)">
+              ${hist
+                .map((h) => {
+                  const d =
+                    h.delta == null
+                      ? ""
+                      : h.delta > 0
+                        ? `▲${h.delta}`
+                        : h.delta < 0
+                          ? `▼${Math.abs(h.delta)}`
+                          : "●0";
+                  const dCls =
+                    h.delta == null ? "" : h.delta > 0 ? "up" : h.delta < 0 ? "down" : "";
+                  const on =
+                    (state.quarterKey && h.quarter === state.quarterKey) ||
+                    (!state.quarterKey && h === hist[hist.length - 1])
+                      ? "on"
+                      : "";
+                  return `<button type="button" class="qtr-chip ${on}" data-q="${escapeHtml(h.quarter)}" title="${escapeHtml(h.note || h.quarter)}">
+                    <span class="q">${escapeHtml(h.quarter)}</span>
+                    <span class="s ${escapeHtml(h.label)}">${h.score}</span>
+                    <span class="delta ${dCls}">${d}</span>
+                  </button>`;
+                })
+                .join("")}
+            </div>`
+          : `<span class="meta" id="qtrHistory">No quarter history yet</span>`;
+
         el("score").innerHTML = `
           <div class="score-row">
-            <div class="gauge ${escapeHtml(j.label)}">${j.healthScore}</div>
-            <div>
-              <div><strong>${escapeHtml(j.symbol)}</strong> — ${escapeHtml(j.label)}</div>
-              <div class="meta">${escapeHtml(bits.join(" · "))}</div>
-              <p style="margin:8px 0 0;font-size:0.92rem">${escapeHtml(j.summary || "")}</p>
+            <div class="gauge ${escapeHtml(active.label)}" title="Quarter score">${active.score}</div>
+            <div class="score-main">
+              <div class="score-title">
+                <strong>${escapeHtml(j.symbol)}</strong>
+                <span class="qtr-pill">${escapeHtml(active.quarter)}</span>
+                <span>${escapeHtml(active.label)}</span>
+                <span class="trend ${trend.cls}">${escapeHtml(trend.text)}</span>
+              </div>
+              <span class="meta">overall ${j.healthScore} · ${(data.transcripts || []).length} tx</span>
+              ${historyHtml}
             </div>
           </div>`;
+
+        const histEl = el("qtrHistory");
+        if (histEl) {
+          histEl.onclick = (e) => {
+            const b = e.target.closest("[data-q]");
+            if (!b || !state.data) return;
+            const q = b.getAttribute("data-q");
+            // Click active quarter again → show all cards
+            state.quarterKey = state.quarterKey === q ? null : q;
+            state.activeId = null;
+            const txs = state.data.transcripts || [];
+            if (state.quarterKey) {
+              const idx = txs.findIndex((t) => t.fyQuarter.toUpperCase() === state.quarterKey);
+              if (idx >= 0) state.txIndex = idx;
+            }
+            setTranscriptOpen(false);
+            renderScore(state.data);
+            renderChips(filteredCardsBase());
+            renderCards();
+          };
+        }
       }
 
       function renderChips(cards) {
@@ -616,50 +877,36 @@
       function renderTxSelect() {
         const txs = state.data.transcripts || [];
         el("txSelect").innerHTML = txs.length
-          ? `<option value="all">All quarters (cards)</option>` +
-            txs
+          ? txs
               .map(
                 (t, i) =>
                   `<option value="${i}">${escapeHtml(t.fyQuarter)} · ${escapeHtml(t.callDate)}</option>`
               )
               .join("")
-          : `<option value="">No transcripts — click Check for updates</option>`;
+          : `<option value="">No transcripts</option>`;
 
         el("txSelect").onchange = () => {
-          const val = el("txSelect").value;
-          if (val === "all" || val === "") {
-            state.quarterKey = null;
-            state.activeId = null;
-            renderChips(filteredCardsBase());
-            renderCards();
-            if (txs[0]) showTranscript(0, null, null);
-            el("txHint").textContent = "All quarters — click a card to open its transcript on the right.";
-            return;
-          }
-          const idx = Number(val);
+          if (!state.txOpen) return;
+          const idx = Number(el("txSelect").value);
+          if (!Number.isFinite(idx)) return;
           state.txIndex = idx;
           const t = txs[idx];
           state.quarterKey = t ? t.fyQuarter.toUpperCase() : null;
-          state.activeId = null;
+          renderScore(state.data);
           renderChips(filteredCardsBase());
           renderCards();
           showTranscript(idx, null, null);
           el("txHint").textContent = t
-            ? `${t.fyQuarter} — left list filtered to this quarter`
+            ? `${t.fyQuarter} — browsing this transcript`
             : "";
         };
-
-        if (txs.length) {
-          state.txIndex = 0;
-          state.quarterKey = null;
-          el("txSelect").value = "all";
-          showTranscript(0, null, null);
-          el("txHint").textContent = "All quarters — click a card to jump inside the transcript panel.";
-        } else {
-          el("transcript").textContent =
-            "Transcripts not loaded yet. Click Check for updates to fetch PDFs from BSE.";
-        }
       }
+
+      el("txClose").addEventListener("click", () => {
+        state.activeId = null;
+        setTranscriptOpen(false);
+        renderCards();
+      });
 
       function showTranscript(index, quote, charOffset, title) {
         const txs = state.data.transcripts || [];
@@ -766,7 +1013,7 @@
 
         const idx = resolveTxIndex(card);
         if (idx < 0) {
-          el("txHint").textContent = "No transcript files yet — click Check for updates first.";
+          el("err").textContent = "No transcript files yet — click Check for updates first.";
           renderCards();
           return;
         }
@@ -774,8 +1021,11 @@
         const t = state.data.transcripts[idx];
         state.quarterKey = t.fyQuarter.toUpperCase();
         state.txIndex = idx;
+        setTranscriptOpen(true);
+        renderScore(state.data);
         renderChips(filteredCardsBase());
         renderCards();
+        if (el("txSelect")) el("txSelect").value = String(idx);
         showTranscript(idx, card.quote || card.body, card.charOffset, card.title);
       }
 
@@ -783,9 +1033,11 @@
         state.data = data;
         state.filter = "all";
         state.activeId = null;
-        state.quarterKey = null;
+        state.quarterKey = null; // all cards; gauge still shows latest quarter
         state.txIndex = 0;
         el("layout").hidden = false;
+        setTranscriptOpen(false);
+        el("transcript").textContent = "";
         renderScore(data);
         renderChips(filteredCardsBase());
         renderCards();
