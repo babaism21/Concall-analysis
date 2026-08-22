@@ -65,7 +65,20 @@ export function startServer(port = PORT) {
           sendJson(res, 404, { symbol: stock.symbol, status: "not_found", error: "not_found" });
           return;
         }
-        sendJson(res, 200, stockToUiPayload(stock));
+        const payload = stockToUiPayload(stock);
+        try {
+          const { pricesForQuarters } = await import("../market/prices.ts");
+          const txs = (payload.transcripts as Array<{ fyQuarter?: string; callDate?: string }>) || [];
+          const quarterPrices = await pricesForQuarters(
+            stock.symbol,
+            txs.map((t) => ({ quarter: t.fyQuarter || "", callDate: t.callDate || "" }))
+          );
+          sendJson(res, 200, { ...payload, quarterPrices });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn(`[api] prices enrich failed: ${msg}`);
+          sendJson(res, 200, { ...payload, quarterPrices: [] });
+        }
         return;
       }
 

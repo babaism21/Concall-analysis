@@ -206,6 +206,15 @@
       }
       .qtr-chip .delta.up { color: var(--good); }
       .qtr-chip .delta.down { color: var(--weak); }
+      .qtr-chip .px {
+        display: block;
+        font-size: 0.62rem;
+        color: var(--muted);
+        margin-top: 2px;
+        font-variant-numeric: tabular-nums;
+      }
+      .qtr-chip .px .up { color: var(--good); }
+      .qtr-chip .px .down { color: var(--weak); }
       .layout {
         display: grid;
         grid-template-columns: 1fr;
@@ -528,7 +537,8 @@
       }
 
       /**
-       * Build chronological quarter history (oldest → newest).
+       * Indian FY quarters (Apr–Mar): Q1=Apr–Jun … Q4=Jan–Mar.
+       * Returned newest → oldest for the chip row. Deltas are still vs the prior FY quarter.
        * Duplicate quarters (e.g. two Q4FY26 calls) are averaged.
        */
       function quarterHistory(data) {
@@ -554,34 +564,36 @@
             });
           }
         }
-        // Prefer transcript order when available (newest-first in API → reverse for history)
+        // Transcripts are newest-first → reverse to build oldest→newest for deltas
         const txOrder = (data.transcripts || [])
           .map((t) => String(t.fyQuarter || "").toUpperCase())
           .filter(Boolean);
         const seen = new Set();
-        const ordered = [];
+        const oldestFirst = [];
         for (const q of [...txOrder].reverse()) {
           if (seen.has(q) || !map.has(q)) continue;
           seen.add(q);
-          ordered.push(map.get(q));
+          oldestFirst.push(map.get(q));
         }
         for (const [q, v] of map) {
-          if (!seen.has(q)) ordered.push(v);
+          if (!seen.has(q)) oldestFirst.push(v);
         }
-        return ordered.map((v, i, arr) => {
+        const withDelta = oldestFirst.map((v, i, arr) => {
           const prev = i > 0 ? arr[i - 1].score : null;
           const delta = prev == null ? null : v.score - prev;
           return { ...v, delta, label: labelFromScore(v.score) };
         });
+        // UI shows latest first
+        return withDelta.reverse();
       }
 
       function activeQuarterScore(data) {
         const hist = quarterHistory(data);
         const j = data.portfolioJson;
-        // Prefer selected quarter; otherwise latest quarter score (overall stays in meta)
+        // Prefer selected quarter; otherwise latest (first chip)
         const pick =
           (state.quarterKey && hist.find((h) => h.quarter === state.quarterKey)) ||
-          (hist.length ? hist[hist.length - 1] : null);
+          (hist.length ? hist[0] : null);
         if (pick) {
           return {
             quarter: pick.quarter,
@@ -616,7 +628,7 @@
         const trend = trendText(active.delta);
 
         const historyHtml = hist.length
-          ? `<div class="qtr-history" id="qtrHistory" title="Quarter score history (oldest → newest)">
+          ? `<div class="qtr-history" id="qtrHistory" title="Indian FY (Apr–Mar) · latest first · price = close on call/filing day">
               ${hist
                 .map((h) => {
                   const d =
@@ -631,13 +643,25 @@
                     h.delta == null ? "" : h.delta > 0 ? "up" : h.delta < 0 ? "down" : "";
                   const on =
                     (state.quarterKey && h.quarter === state.quarterKey) ||
-                    (!state.quarterKey && h === hist[hist.length - 1])
+                    (!state.quarterKey && h === hist[0])
                       ? "on"
                       : "";
+                  const px = (data.quarterPrices || []).find(
+                    (p) => String(p.quarter || "").toUpperCase() === h.quarter
+                  );
+                  let pxHtml = "";
+                  if (px?.price?.close != null) {
+                    const ch = px.price.dayChangePct;
+                    const chCls = ch == null ? "" : ch > 0 ? "up" : ch < 0 ? "down" : "";
+                    const chTxt =
+                      ch == null ? "" : ` <span class="${chCls}">${ch > 0 ? "+" : ""}${ch}%</span>`;
+                    pxHtml = `<span class="px" title="NSE close on ${escapeHtml(px.price.date)} (call ${escapeHtml(px.callDate)})">₹${Number(px.price.close).toLocaleString("en-IN")}${chTxt}</span>`;
+                  }
                   return `<button type="button" class="qtr-chip ${on}" data-q="${escapeHtml(h.quarter)}" title="${escapeHtml(h.note || h.quarter)}">
                     <span class="q">${escapeHtml(h.quarter)}</span>
                     <span class="s ${escapeHtml(h.label)}">${h.score}</span>
                     <span class="delta ${dCls}">${d}</span>
+                    ${pxHtml}
                   </button>`;
                 })
                 .join("")}
@@ -1033,8 +1057,14 @@
         state.data = data;
         state.filter = "all";
         state.activeId = null;
-        state.quarterKey = null; // all cards; gauge still shows latest quarter
-        state.txIndex = 0;
+        const hist = quarterHistory(data);
+        // Default: latest Indian-FY quarter selected (chips are newest → oldest)
+        state.quarterKey = hist.length ? hist[0].quarter : null;
+        const txs = data.transcripts || [];
+        const latestIdx = state.quarterKey
+          ? txs.findIndex((t) => t.fyQuarter.toUpperCase() === state.quarterKey)
+          : 0;
+        state.txIndex = latestIdx >= 0 ? latestIdx : 0;
         el("layout").hidden = false;
         setTranscriptOpen(false);
         el("transcript").textContent = "";

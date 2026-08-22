@@ -29,7 +29,7 @@ Return ONLY this JSON object:
   "risks": [
     { "title": "short headline", "body": "material risk flagged on this call", "quote": "verbatim ≤30 words" }
   ],
-  "callScore": <number 0-10: management transparency and credibility on THIS call>,
+  "callScore": <number 0-10 with ONE decimal allowed: credibility on THIS call ONLY>,
   "summary": "2-3 sentence headline for this quarter's concall"
 }
 
@@ -38,6 +38,9 @@ Requirements:
 - negative: exactly 3 items
 - guidance: 0–2 items
 - risks: 0–2 items
+- callScore MUST reflect THIS call only (not a company average). Use the full 0–10 range.
+  Start at 6.5, then: major delivery miss -1.5 to -2.5; guidance cut/flip-flop -1.0; evasive Q&A -0.5 to -1.0;
+  major beat/clear delivery +1.0 to +2.0; exceptional transparency +0.5. Avoid defaulting to 7–8.
 - Keep titles under 8 words; bodies under 120 chars; quotes under 25 words
 
 Transcript:
@@ -97,7 +100,15 @@ Return ONLY this JSON:
 }
 
 Include 6–12 cross-quarter commitments where prior guidance can be checked against later delivery.
-Include timeline entry for each call quarter listed above.`;
+Include timeline entry for each call quarter listed above.
+
+BALANCED QUARTER SCORING (NiftyGPT-style) — timeline scores MUST differ across quarters:
+- Start from the provided callScore for that quarter, then adjust with evidence from later calls.
+- Deduct: major miss (>10% vs guidance) -2.0 to -2.5; minor miss -1.0 to -1.5; vague guidance -0.5 to -1.0;
+  mid-course guidance change -1.0; credibility/governance red flag -1.0 to -2.0.
+- Add: major beat +2.0 to +2.5; minor beat +1.0 to +1.5; proactive transparent update +0.5.
+- Do NOT assign the same score to every quarter. Typical healthy series varies by ≥1.5 points peak-to-trough.
+- Prefer one-decimal scores (e.g. 6.5, 7.8, 4.2). Notes must cite the concrete reason for the score.`;
 }
 
 // Legacy bulk prompts kept for reference / fallback

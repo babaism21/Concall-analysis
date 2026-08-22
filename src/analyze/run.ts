@@ -11,6 +11,8 @@ import { countMissingExtracts } from "../db/extractCache.ts";
 import {
   attachTranscriptAnchors,
   buildInsightsFromCommitments,
+  buildQuarterTimeline,
+  repairFlatTimeline,
   scoreFromCommitments,
   type PortfolioJson,
 } from "./score.ts";
@@ -39,8 +41,9 @@ function getCached(symbol: string): AnalysisRecord | null {
       }
     | undefined;
   if (!row) return null;
-  const portfolioJson = JSON.parse(row.portfolioJson) as PortfolioJson;
+  let portfolioJson = JSON.parse(row.portfolioJson) as PortfolioJson;
   if (!portfolioJson.insights) portfolioJson.insights = [];
+  portfolioJson = repairFlatTimeline(portfolioJson);
   return {
     ...row,
     portfolioJson,
@@ -269,7 +272,20 @@ export async function analyzeSymbol(
     redFlags: synthesis.redFlags,
     commitments: synthesis.commitments,
     insights: allInsights,
-    timeline: synthesis.timeline,
+    timeline: buildQuarterTimeline({
+      calls: perCalls.map((c) => ({
+        quarter: c.fyQuarter,
+        callScore: c.callScore,
+        summary: c.summary,
+        positiveCount: c.insights.filter((i) => i.kind === "positive" || i.kind === "delivered").length,
+        negativeCount: c.insights.filter((i) => i.kind === "negative" || i.kind === "missed").length,
+        riskCount: c.insights.filter((i) => i.kind === "risk").length,
+      })),
+      commitments: synthesis.commitments,
+      insights: allInsights,
+      redFlags: synthesis.redFlags,
+      llmNotes: synthesis.timeline,
+    }),
     summary: synthesis.summary,
     transcriptCount: transcripts.length,
     latestSourceUrl: latestUrl,

@@ -4,6 +4,7 @@ import pg from "pg";
 import { BLOB_DIR, DATABASE_URL, USE_POSTGRES } from "../config.ts";
 import { ensureDataDirs } from "../config.ts";
 import type { PortfolioJson } from "../analyze/score.ts";
+import { resultsQuarterFromCallDate, quarterRelabelMap, applyQuarterRelabel } from "../fy.ts";
 import type { TranscriptPayload } from "../types.ts";
 
 const { Pool } = pg;
@@ -161,13 +162,18 @@ export async function getStockFromPg(symbol: string): Promise<StockResponse> {
     [sym]
   );
 
-  const transcripts: TranscriptPayload[] = txRes.rows.map((r) => ({
-    callDate: r.call_date,
-    fyQuarter: r.fy_quarter ?? "",
-    sourceUrl: r.source_url,
-    text: r.text_content,
-    charCount: Number(r.char_count ?? 0),
-  }));
+  const transcripts: TranscriptPayload[] = txRes.rows.map((r) => {
+    const callDate = r.call_date as string;
+    const corrected =
+      resultsQuarterFromCallDate(callDate) || String(r.fy_quarter ?? "");
+    return {
+      callDate,
+      fyQuarter: corrected,
+      sourceUrl: r.source_url,
+      text: r.text_content,
+      charCount: Number(r.char_count ?? 0),
+    };
+  });
 
   if (!analysisRes.rows.length) {
     return {
@@ -181,6 +187,29 @@ export async function getStockFromPg(symbol: string): Promise<StockResponse> {
   const row = analysisRes.rows[0];
   const portfolioJson = row.portfolio_json as PortfolioJson;
   if (!portfolioJson.insights) portfolioJson.insights = [];
+  // Fix legacy call-month→quarter mislabels (Jul call was wrongly Q2, etc.)
+  {
+    const qmap = quarterRelabelMap(
+      txRes.rows.map((r) => ({
+        callDate: r.call_date as string,
+        fyQuarter: String(r.fy_quarter ?? ""),
+      }))
+    );
+    if (qmap.size) {
+      portfolioJson.timeline = (portfolioJson.timeline ?? []).map((e) => ({
+        ...e,
+        quarter: applyQuarterRelabel(e.quarter, qmap),
+      }));
+      portfolioJson.insights = (portfolioJson.insights ?? []).map((e) => ({
+        ...e,
+        quarter: applyQuarterRelabel(e.quarter, qmap),
+      }));
+      portfolioJson.commitments = (portfolioJson.commitments ?? []).map((e) => ({
+        ...e,
+        quarter: applyQuarterRelabel(e.quarter, qmap),
+      }));
+    }
+  }
 
   const analysis: PgAnalysis = {
     symbol: row.symbol,

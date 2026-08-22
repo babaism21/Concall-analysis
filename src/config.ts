@@ -49,7 +49,7 @@ export const OPENROUTER_BASE_URL =
  */
 export const MODEL_ID = process.env.MODEL_ID ?? "moonshotai/kimi-k2.5";
 
-export const PROMPT_VERSION = "mgmt-health-v4-percall";
+export const PROMPT_VERSION = "mgmt-health-v5-quarter-scores";
 export const MAX_TRANSCRIPTS = Number(process.env.MAX_TRANSCRIPTS ?? 8);
 export const ANALYZE_CONCURRENCY = Math.max(1, Number(process.env.ANALYZE_CONCURRENCY ?? 3));
 export const PORT = Number(process.env.PORT ?? 8787);
