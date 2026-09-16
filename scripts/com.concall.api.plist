@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.concall.api</string>
+  <key>WorkingDirectory</key>
+  <string>/Users/sonamsolanki/Desktop/Github/Concall-analysis</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>/Users/sonamsolanki/Desktop/Github/Concall-analysis/scripts/run-api.sh</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/sonamsolanki/Desktop/Github/Concall-analysis/data/logs/serve-api.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/sonamsolanki/Desktop/Github/Concall-analysis/data/logs/serve-api.log</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/opt/postgresql@16/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+</dict>
+</plist>

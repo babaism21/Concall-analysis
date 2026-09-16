@@ -69,6 +69,57 @@
         flex-shrink: 0;
       }
       .top h1 { flex-shrink: 0; margin-right: 4px; }
+      .symbol-search {
+        position: relative;
+        flex: 1;
+        min-width: 140px;
+      }
+      .symbol-search input {
+        width: 100%;
+        box-sizing: border-box;
+        flex: none;
+        min-width: 0;
+      }
+      .symbol-menu {
+        display: none;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: calc(100% + 4px);
+        z-index: 40;
+        max-height: min(320px, 50vh);
+        overflow: auto;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+        padding: 4px;
+      }
+      .symbol-menu.open { display: block; }
+      .symbol-menu button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        color: var(--text);
+        border: 0;
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-weight: 600;
+        font-size: 0.88rem;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+      }
+      .symbol-menu button:hover,
+      .symbol-menu button.active {
+        background: #1a2a3a;
+        color: var(--accent);
+      }
+      .symbol-menu .empty {
+        color: var(--muted);
+        font-size: 0.8rem;
+        padding: 10px;
+      }
       input {
         flex: 1;
         min-width: 100px;
@@ -223,6 +274,10 @@
         min-height: 0;
         height: 0;
         align-items: stretch;
+      }
+      /* author .layout { display:grid } otherwise beats the [hidden] UA rule */
+      .layout[hidden] {
+        display: none !important;
       }
       .layout.tx-open {
         grid-template-columns: 1fr 1fr;
@@ -416,9 +471,22 @@
   </head>
   <body>
     <div class="shell">
-      <form class="top" id="f">
+      <form class="top" id="f" autocomplete="off">
         <h1>Management Health</h1>
-        <input id="symbol" placeholder="HDFCBANK" value="HDFCBANK" required />
+        <div class="symbol-search" id="symbolSearch">
+          <input
+            id="symbol"
+            placeholder="Search symbol…"
+            value=""
+            required
+            autocomplete="off"
+            spellcheck="false"
+            aria-autocomplete="list"
+            aria-controls="symbolMenu"
+            aria-expanded="false"
+          />
+          <div class="symbol-menu" id="symbolMenu" role="listbox" hidden></div>
+        </div>
         <button type="submit">Show</button>
         <button type="button" class="secondary" id="updateBtn">Check for updates</button>
       </form>
@@ -454,9 +522,89 @@
         quarterKey: null,
         txIndex: 0,
         txOpen: false,
+        symbols: [],
+        menuOpen: false,
+        menuActive: -1,
+        fetchGen: 0,
       };
 
       const el = (id) => document.getElementById(id);
+
+      function clearView(message) {
+        state.data = null;
+        state.activeId = null;
+        state.quarterKey = null;
+        state.txIndex = 0;
+        state.filter = "all";
+        el("layout").hidden = true;
+        el("score").innerHTML = "";
+        el("transcript").textContent = "";
+        setTranscriptOpen(false);
+        el("err").textContent = message || "";
+      }
+
+      function setMenuOpen(open) {
+        state.menuOpen = Boolean(open);
+        const menu = el("symbolMenu");
+        menu.classList.toggle("open", state.menuOpen);
+        menu.hidden = !state.menuOpen;
+        el("symbol").setAttribute("aria-expanded", state.menuOpen ? "true" : "false");
+        if (!state.menuOpen) state.menuActive = -1;
+      }
+
+      function filteredSymbols(query) {
+        const q = String(query || "").trim().toUpperCase();
+        const list = state.symbols;
+        if (!q) return list.slice(0, 40);
+        return list.filter((s) => s.includes(q)).slice(0, 40);
+      }
+
+      function renderSymbolMenu() {
+        const menu = el("symbolMenu");
+        const q = el("symbol").value;
+        const matches = filteredSymbols(q);
+        if (!matches.length) {
+          menu.innerHTML = `<div class="empty">${
+            state.symbols.length
+              ? "No matching symbols"
+              : "No analyzed stocks yet — backfill still running"
+          }</div>`;
+          state.menuActive = -1;
+          return;
+        }
+        if (state.menuActive >= matches.length) state.menuActive = matches.length - 1;
+        menu.innerHTML = matches
+          .map(
+            (s, i) =>
+              `<button type="button" role="option" data-symbol="${escapeHtml(s)}" class="${
+                i === state.menuActive ? "active" : ""
+              }">${escapeHtml(s)}</button>`
+          )
+          .join("");
+      }
+
+      async function loadSymbolList() {
+        try {
+          const res = await fetch("/v1/stocks");
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || res.statusText);
+          state.symbols = Array.isArray(data.symbols)
+            ? data.symbols.map((s) => String(s).toUpperCase())
+            : [];
+          if (state.menuOpen) renderSymbolMenu();
+        } catch (e) {
+          console.warn("symbol list failed", e);
+        }
+      }
+
+      function pickSymbol(symbol) {
+        const sym = String(symbol || "").trim().toUpperCase();
+        if (!sym) return;
+        el("symbol").value = sym;
+        setMenuOpen(false);
+        el("err").textContent = "";
+        run("show");
+      }
 
       function setTranscriptOpen(open) {
         state.txOpen = Boolean(open);
@@ -500,6 +648,11 @@
         return insights;
       }
 
+      function isOpenKind(kind) {
+        // LLM marks forward commitments as "guidance"; treat as still-open for filters/counts
+        return kind === "open" || kind === "guidance";
+      }
+
       function counts(cards) {
         const c = {
           all: cards.length,
@@ -515,7 +668,7 @@
           else if (x.kind === "negative") c.negative++;
           else if (x.kind === "delivered") c.delivered++;
           else if (x.kind === "missed") c.missed++;
-          else if (x.kind === "open") c.open++;
+          else if (isOpenKind(x.kind)) c.open++;
           else if (x.kind === "risk") c.risk++;
           else c.open++;
         }
@@ -742,31 +895,47 @@
 
       function filteredCardsBase() {
         let cards = cardsFromData(state.data);
+        if (!state.quarterKey) return cards;
+        const q = state.quarterKey;
         const txs = state.data.transcripts || [];
-        const t = txs[state.txIndex];
-        if (state.quarterKey && t) {
-          cards = cards.filter((x) => {
-            if (cardMatchesTranscript(x, t)) return true;
-            if (!x.quarter && (x.kind === "risk" || x.kind === "positive" || x.kind === "negative"))
-              return true;
-            return false;
-          });
-        }
-        return cards;
+        const t =
+          txs.find((x) => String(x.fyQuarter || "").toUpperCase() === q) ||
+          txs[state.txIndex];
+        return cards.filter((x) => {
+          const cq = quarterKeyFromLabel(x.quarter);
+          if (cq && cq === q) return true;
+          if (t && cardMatchesTranscript(x, t)) return true;
+          // Unscoped cards still useful within a quarter view
+          if (
+            !cq &&
+            (x.kind === "risk" ||
+              x.kind === "positive" ||
+              x.kind === "negative" ||
+              isOpenKind(x.kind) ||
+              x.kind === "delivered" ||
+              x.kind === "missed")
+          )
+            return true;
+          return false;
+        });
       }
 
       function filteredCards() {
         const cards = filteredCardsBase();
         if (state.filter === "all") return cards;
+        if (state.filter === "open") return cards.filter((x) => isOpenKind(x.kind));
         return cards.filter((x) => x.kind === state.filter);
       }
 
       function renderCards() {
         const cards = filteredCards();
         if (!cards.length) {
-          const hint = state.quarterKey
-            ? "No cards linked to this transcript yet — pick “All quarters (cards)” or re-analyze for per-quarter updates."
-            : "No items for this filter.";
+          const hint =
+            state.filter !== "all"
+              ? `No ${state.filter === "open" ? "still-open" : state.filter} items for ${state.quarterKey || "this view"}.`
+              : state.quarterKey
+                ? "No cards for this quarter yet — click the selected quarter again to show all quarters."
+                : "No items for this filter.";
           el("cards").innerHTML = `<div class="empty">${escapeHtml(hint)}</div>`;
           return;
         }
@@ -1082,28 +1251,51 @@
       async function run(mode) {
         const symbol = el("symbol").value.trim().toUpperCase();
         if (!symbol) return;
+        const gen = ++state.fetchGen;
+        el("symbol").value = symbol;
         el("err").textContent = "";
-        el("f").querySelectorAll("button").forEach((b) => (b.disabled = true));
+        setMenuOpen(false);
+        el("f").querySelectorAll("button").forEach((b) => {
+          if (!b.closest("#symbolMenu")) b.disabled = true;
+        });
         try {
           if (mode === "show") {
             const res = await fetch("/v1/stocks/" + encodeURIComponent(symbol));
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || res.statusText);
+            if (gen !== state.fetchGen) return;
+            if (!res.ok) {
+              clearView(
+                data.error === "not_found" || data.status === "not_found"
+                  ? `${symbol} is not available yet`
+                  : data.error || res.statusText
+              );
+              return;
+            }
             renderAll(mapStockResponse(data));
           } else {
             const res = await fetch("/refresh/" + encodeURIComponent(symbol), { method: "POST" });
             const data = await res.json();
+            if (gen !== state.fetchGen) return;
             if (!res.ok) throw new Error(data.error || res.statusText);
             const showRes = await fetch("/v1/stocks/" + encodeURIComponent(symbol));
             const showData = await showRes.json();
+            if (gen !== state.fetchGen) return;
             if (showRes.ok) renderAll(mapStockResponse(showData));
-            else if (state.data?.portfolioJson) renderAll(state.data);
-            else throw new Error(showData.error || "No analysis cached yet — run Analyze first");
+            else {
+              clearView(
+                showData.error === "not_found" || showData.status === "not_found"
+                  ? `${symbol} is not available yet`
+                  : showData.error || "No analysis cached yet — run Analyze first"
+              );
+            }
           }
         } catch (e) {
-          el("err").textContent = e.message || String(e);
+          if (gen !== state.fetchGen) return;
+          clearView(e.message || String(e));
         } finally {
-          el("f").querySelectorAll("button").forEach((b) => (b.disabled = false));
+          if (gen === state.fetchGen) {
+            el("f").querySelectorAll("button").forEach((b) => (b.disabled = false));
+          }
         }
       }
 
@@ -1112,7 +1304,73 @@
         run("show");
       });
       el("updateBtn").addEventListener("click", () => run("update"));
-      run("show");
+
+      const symbolInput = el("symbol");
+      symbolInput.addEventListener("focus", () => {
+        loadSymbolList();
+        renderSymbolMenu();
+        setMenuOpen(true);
+      });
+      symbolInput.addEventListener("input", () => {
+        el("err").textContent = "";
+        renderSymbolMenu();
+        setMenuOpen(true);
+        const q = symbolInput.value.trim().toUpperCase();
+        // Drop stale stock UI as soon as typed query matches nothing available
+        if (state.data && q && filteredSymbols(q).length === 0) {
+          state.fetchGen += 1; // cancel in-flight show/update
+          clearView("");
+        }
+      });
+      symbolInput.addEventListener("keydown", (e) => {
+        if (!state.menuOpen && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+          renderSymbolMenu();
+          setMenuOpen(true);
+        }
+        const matches = filteredSymbols(symbolInput.value);
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          if (!matches.length) return;
+          state.menuActive = Math.min(state.menuActive + 1, matches.length - 1);
+          renderSymbolMenu();
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          if (!matches.length) return;
+          state.menuActive = Math.max(state.menuActive - 1, 0);
+          renderSymbolMenu();
+        } else if (e.key === "Enter" && state.menuOpen && state.menuActive >= 0) {
+          e.preventDefault();
+          pickSymbol(matches[state.menuActive]);
+        } else if (e.key === "Escape") {
+          setMenuOpen(false);
+        }
+      });
+      el("symbolMenu").addEventListener("mousedown", (e) => {
+        const btn = e.target.closest("button[data-symbol]");
+        if (!btn) return;
+        e.preventDefault();
+        pickSymbol(btn.getAttribute("data-symbol"));
+      });
+      document.addEventListener("click", (e) => {
+        if (!el("symbolSearch").contains(e.target)) setMenuOpen(false);
+      });
+
+      loadSymbolList().then(() => {
+        const params = new URLSearchParams(location.search);
+        const fromUrl = (params.get("symbol") || "").trim().toUpperCase();
+        if (fromUrl) {
+          symbolInput.value = fromUrl;
+          run("show");
+          return;
+        }
+        if (state.symbols.length) {
+          symbolInput.value = state.symbols[0];
+          run("show");
+        } else {
+          clearView("No analyzed stocks yet — backfill still running");
+        }
+      });
+      setInterval(loadSymbolList, 20000);
     </script>
   </body>
 </html>

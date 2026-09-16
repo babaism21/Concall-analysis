@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ingestSymbol } from "./ingest/run.ts";
-import { analyzeSymbol, getAnalysis } from "./analyze/run.ts";
+import { analyzeSymbol, getAnalysis, rescoreSymbol } from "./analyze/run.ts";
 import { startServer } from "./api/server.ts";
 import { migrateSqliteToPostgres } from "./db/migrate.ts";
 import { runWorkerLoopOnce } from "./jobs/worker.ts";
@@ -37,12 +37,15 @@ function usage() {
   npm run ingest -- SYMBOL
   npm run reparse -- SYMBOL
   npm run analyze -- SYMBOL [--force]   # incremental hash cache; --force re-LLMs all
+  npm run rescore -- SYMBOL [SYMBOL...] # recompute scores from stored analysis (no LLM)
   npm run get -- SYMBOL
   npm run serve                         # API + background analyze worker
   npm run worker                        # drain analyze job queue once
+  npm run worker -- --loop              # keep draining (separate from serve)
   npm run enqueue -- SYMBOL [--force]
   npm run backfill -- status|enqueue|refresh [--file path] [--limit N] [--force]
   npm run migrate:pg
+  npm run score:selfcheck               # scoring unit self-check
 `);
 }
 
@@ -80,6 +83,19 @@ async function main() {
   }
 
   if (cmd === "worker") {
+    const loop = rest.includes("--loop");
+    if (loop) {
+      // Continuous drain in a process separate from `serve` (keeps API from OOM kills).
+      process.env.ENABLE_ANALYZE_WORKER = "true";
+      if (!process.env.WORKER_CONCURRENCY || process.env.WORKER_CONCURRENCY === "0") {
+        process.env.WORKER_CONCURRENCY = "1";
+      }
+      const { startAnalyzeWorker } = await import("./jobs/worker.ts");
+      startAnalyzeWorker();
+      console.log("[worker] looping — Ctrl+C to stop");
+      await new Promise(() => {});
+      return;
+    }
     await runWorkerLoopOnce();
     return;
   }
@@ -114,6 +130,20 @@ async function main() {
     }
     const job = enqueueAnalyzeJob(symbol, { force });
     console.log(JSON.stringify(job, null, 2));
+    return;
+  }
+
+  if (cmd === "rescore") {
+    const symbols = rest.filter((a) => !a.startsWith("--"));
+    if (!symbols.length) {
+      usage();
+      process.exit(1);
+    }
+    const results = [];
+    for (const symbol of symbols) {
+      results.push(await rescoreSymbol(symbol));
+    }
+    console.log(JSON.stringify(results, null, 2));
     return;
   }
 

@@ -142,6 +142,16 @@ export function ensureBlobPdf(pdfPath: string | null | undefined): string | null
   return sha;
 }
 
+/** Symbols with cached management analysis (ready to open in the UI). */
+export async function listAvailableSymbolsFromPg(): Promise<string[]> {
+  await initPgSchema();
+  const client = getPool();
+  const res = await client.query(
+    `SELECT symbol FROM analyses ORDER BY symbol ASC`
+  );
+  return res.rows.map((r) => String(r.symbol).toUpperCase());
+}
+
 export async function getStockFromPg(symbol: string): Promise<StockResponse> {
   const sym = symbol.trim().toUpperCase();
   await initPgSchema();

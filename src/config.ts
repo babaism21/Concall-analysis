@@ -50,8 +50,30 @@ export const OPENROUTER_BASE_URL =
 export const MODEL_ID = process.env.MODEL_ID ?? "moonshotai/kimi-k2.5";
 
 export const PROMPT_VERSION = "mgmt-health-v5-quarter-scores";
+/** Bump when score math changes; used in logs / docs. Does not invalidate LLM extract cache. */
+export const SCORE_LOGIC_VERSION = "score-v6-unified";
+/** How many transcripts to ingest/store from Screener (newest first). */
 export const MAX_TRANSCRIPTS = Number(process.env.MAX_TRANSCRIPTS ?? 8);
+/**
+ * How many newest transcripts to analyze per symbol (first-pass speed).
+ * Keep ≤ MAX_TRANSCRIPTS. Override with ANALYZE_MAX_TRANSCRIPTS=8 for deep runs.
+ */
+export const ANALYZE_MAX_TRANSCRIPTS = Math.max(
+  1,
+  Number(process.env.ANALYZE_MAX_TRANSCRIPTS ?? 4)
+);
+/** Parallel per-call LLM extracts within one symbol. */
 export const ANALYZE_CONCURRENCY = Math.max(1, Number(process.env.ANALYZE_CONCURRENCY ?? 3));
+/**
+ * Parallel symbols in the analyze worker.
+ * Set WORKER_CONCURRENCY=0 or ENABLE_ANALYZE_WORKER=false to keep `serve` API-only.
+ */
+export const ENABLE_ANALYZE_WORKER =
+  process.env.ENABLE_ANALYZE_WORKER !== "false" &&
+  process.env.ENABLE_ANALYZE_WORKER !== "0";
+export const WORKER_CONCURRENCY = Math.max(0, Number(process.env.WORKER_CONCURRENCY ?? 1));
+/** Auto-requeue a failed analyze job this many times before leaving it failed. */
+export const ANALYZE_JOB_MAX_ATTEMPTS = Math.max(1, Number(process.env.ANALYZE_JOB_MAX_ATTEMPTS ?? 3));
 export const PORT = Number(process.env.PORT ?? 8787);
 export const USER_AGENT =
   process.env.USER_AGENT ??

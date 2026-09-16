@@ -57,8 +57,20 @@ export async function runBackfill(opts: {
   }
 
   if (opts.mode === "enqueue") {
-    const jobs = symbols.map((sym) => enqueueAnalyzeJob(sym, { force: opts.force }));
-    console.log(`[backfill] enqueued ${jobs.length} analyze jobs from ${opts.file}`);
+    const jobs: AnalysisJob[] = [];
+    let skipped = 0;
+    for (const sym of symbols) {
+      const transcripts = loadParsedTranscripts(sym);
+      if (!transcripts.length && !opts.force) {
+        console.log(`[backfill] skip enqueue ${sym} (no transcripts)`);
+        skipped++;
+        continue;
+      }
+      jobs.push(enqueueAnalyzeJob(sym, { force: opts.force }));
+    }
+    console.log(
+      `[backfill] enqueued ${jobs.length} analyze jobs from ${opts.file} (skipped ${skipped} with no transcripts)`
+    );
     return { mode: "enqueue", file: opts.file, symbols, jobs };
   }
 

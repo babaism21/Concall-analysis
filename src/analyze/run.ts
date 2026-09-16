@@ -1,19 +1,20 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { EXAMPLES_DIR, MODEL_ID, PROMPT_VERSION } from "../config.ts";
+import { ANALYZE_MAX_TRANSCRIPTS, EXAMPLES_DIR, MODEL_ID, PROMPT_VERSION } from "../config.ts";
 import { getDb, nowIso } from "../db.ts";
 import { ingestSymbol, loadParsedTranscripts } from "../ingest/run.ts";
 import { syncSymbolToPostgres } from "../db/sync.ts";
 import { getStockFromPg, isPostgresEnabled } from "../db/pg.ts";
 import { stockToAnalysisRecord } from "../db/read.ts";
 import { analyzeAllTranscripts } from "./perCall.ts";
-import { countMissingExtracts } from "../db/extractCache.ts";
+import { listCallExtractsForSymbol } from "../db/extractCache.ts";
 import {
   attachTranscriptAnchors,
   buildInsightsFromCommitments,
   buildQuarterTimeline,
-  repairFlatTimeline,
-  scoreFromCommitments,
+  recomputePortfolioScores,
+  scoreHeadline,
+  type CallScoreSeed,
   type PortfolioJson,
 } from "./score.ts";
 import type { AnalysisRecord, TranscriptPayload } from "../types.ts";
@@ -43,7 +44,7 @@ function getCached(symbol: string): AnalysisRecord | null {
   if (!row) return null;
   let portfolioJson = JSON.parse(row.portfolioJson) as PortfolioJson;
   if (!portfolioJson.insights) portfolioJson.insights = [];
-  portfolioJson = repairFlatTimeline(portfolioJson);
+  portfolioJson = recomputePortfolioScores(portfolioJson);
   return {
     ...row,
     portfolioJson,
@@ -180,14 +181,14 @@ export async function analyzeSymbol(
   }
 
   // Prefer local transcripts for extract fill / cache hits. Only hit Screener when needed.
-  let transcripts = loadParsedTranscripts(sym);
+  let transcripts = loadParsedTranscripts(sym, ANALYZE_MAX_TRANSCRIPTS);
   const shouldIngest =
     !opts.skipIngest && (Boolean(opts.force) || transcripts.length === 0 || !cached);
 
   let latestUrl = transcripts[0]?.sourceUrl ?? cached?.latestSourceUrl ?? null;
   if (shouldIngest) {
     const ingest = await ingestSymbol(sym, undefined, { forceReparse: Boolean(opts.force) });
-    transcripts = loadParsedTranscripts(sym);
+    transcripts = loadParsedTranscripts(sym, ANALYZE_MAX_TRANSCRIPTS);
     latestUrl = transcripts[0]?.sourceUrl ?? ingest.latestSourceUrl;
   } else {
     console.log(`[analyze] skip Screener ingest ${sym} (local transcripts=${transcripts.length})`);
@@ -249,20 +250,30 @@ export async function analyzeSymbol(
     { force: Boolean(opts.force) }
   );
 
-  const { healthScore, label } = scoreFromCommitments(synthesis.commitments);
-  const scored =
-    synthesis.commitments.length > 0
-      ? { healthScore, label }
-      : {
-          healthScore: Math.round(
-            (perCalls.reduce((a, c) => a + c.callScore, 0) / perCalls.length) * 10
-          ),
-          label: (perCalls.reduce((a, c) => a + c.callScore, 0) / perCalls.length >= 7.5
-            ? "Good"
-            : perCalls.reduce((a, c) => a + c.callScore, 0) / perCalls.length >= 5
-              ? "Average"
-              : "Weak") as PortfolioJson["label"],
-        };
+  const callSeeds = perCalls.map((c) => ({
+    quarter: c.fyQuarter,
+    callScore: c.callScore,
+    summary: c.summary,
+    positiveCount: c.insights.filter((i) => i.kind === "positive" || i.kind === "delivered")
+      .length,
+    negativeCount: c.insights.filter((i) => i.kind === "negative" || i.kind === "missed")
+      .length,
+    riskCount: c.insights.filter((i) => i.kind === "risk").length,
+  }));
+
+  const timeline = buildQuarterTimeline({
+    calls: callSeeds,
+    commitments: synthesis.commitments,
+    insights: allInsights,
+    redFlags: synthesis.redFlags,
+    llmNotes: synthesis.timeline,
+  });
+  const scored = scoreHeadline({
+    commitments: synthesis.commitments,
+    insights: allInsights,
+    timeline,
+    redFlags: synthesis.redFlags,
+  });
 
   let portfolioJson: PortfolioJson = {
     symbol: sym,
@@ -272,20 +283,7 @@ export async function analyzeSymbol(
     redFlags: synthesis.redFlags,
     commitments: synthesis.commitments,
     insights: allInsights,
-    timeline: buildQuarterTimeline({
-      calls: perCalls.map((c) => ({
-        quarter: c.fyQuarter,
-        callScore: c.callScore,
-        summary: c.summary,
-        positiveCount: c.insights.filter((i) => i.kind === "positive" || i.kind === "delivered").length,
-        negativeCount: c.insights.filter((i) => i.kind === "negative" || i.kind === "missed").length,
-        riskCount: c.insights.filter((i) => i.kind === "risk").length,
-      })),
-      commitments: synthesis.commitments,
-      insights: allInsights,
-      redFlags: synthesis.redFlags,
-      llmNotes: synthesis.timeline,
-    }),
+    timeline,
     summary: synthesis.summary,
     transcriptCount: transcripts.length,
     latestSourceUrl: latestUrl,
@@ -354,4 +352,97 @@ export async function getAnalysis(symbol: string): Promise<AnalysisRecord | null
     }
   }
   return withTranscripts(cached);
+}
+
+function callSeedsFromExtracts(symbol: string): CallScoreSeed[] {
+  return listCallExtractsForSymbol(symbol).map((c) => ({
+    quarter: c.fyQuarter,
+    callScore: c.callScore,
+    summary: c.summary,
+    positiveCount: c.insights.filter((i) => i.kind === "positive" || i.kind === "delivered")
+      .length,
+    negativeCount: c.insights.filter((i) => i.kind === "negative" || i.kind === "missed")
+      .length,
+    riskCount: c.insights.filter((i) => i.kind === "risk").length,
+  }));
+}
+
+/**
+ * Recompute healthScore / timeline from stored analysis (+ call extracts when present).
+ * No LLM. Persists to SQLite and best-effort Postgres sync.
+ */
+export async function rescoreSymbol(symbol: string): Promise<{
+  symbol: string;
+  before: { healthScore: number; label: string; timelineLen: number };
+  after: { healthScore: number; label: string; timelineLen: number };
+  usedExtractSeeds: number;
+}> {
+  const sym = symbol.trim().toUpperCase();
+  const rawRow = getDb()
+    .prepare(
+      `SELECT markdown, portfolio_json as portfolioJson,
+              latest_source_url as latestSourceUrl,
+              transcript_count as transcriptCount,
+              model_id as modelId, prompt_version as promptVersion,
+              created_at as createdAt
+       FROM management_analysis WHERE symbol = ?`
+    )
+    .get(sym) as
+    | {
+        markdown: string;
+        portfolioJson: string;
+        latestSourceUrl: string | null;
+        transcriptCount: number;
+        modelId: string | null;
+        promptVersion: string | null;
+        createdAt: string;
+      }
+    | undefined;
+  if (!rawRow) {
+    throw new Error(`No stored analysis for ${sym}`);
+  }
+  const rawPortfolio = JSON.parse(rawRow.portfolioJson) as PortfolioJson;
+  if (!rawPortfolio.insights) rawPortfolio.insights = [];
+
+  const before = {
+    healthScore: Number(rawPortfolio.healthScore ?? 0),
+    label: String(rawPortfolio.label ?? "Weak"),
+    timelineLen: rawPortfolio.timeline?.length ?? 0,
+  };
+
+  const seeds = callSeedsFromExtracts(sym);
+  let portfolioJson = recomputePortfolioScores(rawPortfolio, seeds.length > 0 ? seeds : undefined);
+  portfolioJson = {
+    ...portfolioJson,
+    scoredAt: nowIso(),
+  };
+
+  saveAnalysis({
+    symbol: sym,
+    markdown: rawRow.markdown,
+    portfolioJson,
+    latestSourceUrl: rawRow.latestSourceUrl,
+    transcriptCount: rawRow.transcriptCount,
+    modelId: rawRow.modelId,
+    promptVersion: rawRow.promptVersion,
+    createdAt: rawRow.createdAt,
+    updatedAt: nowIso(),
+  });
+  try {
+    await syncSymbolToPostgres(sym);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[rescore] Postgres sync failed for ${sym}: ${msg}`);
+  }
+
+  return {
+    symbol: sym,
+    before,
+    after: {
+      healthScore: portfolioJson.healthScore,
+      label: portfolioJson.label,
+      timelineLen: portfolioJson.timeline.length,
+    },
+    usedExtractSeeds: seeds.length,
+  };
 }

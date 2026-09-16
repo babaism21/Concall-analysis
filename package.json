@@ -7,13 +7,15 @@
     "ingest": "tsx src/cli.ts ingest",
     "reparse": "tsx src/cli.ts reparse",
     "analyze": "tsx src/cli.ts analyze",
+    "rescore": "tsx src/cli.ts rescore",
     "get": "tsx src/cli.ts get",
     "serve": "tsx src/cli.ts serve",
     "dev": "tsx src/cli.ts serve",
     "worker": "tsx src/cli.ts worker",
     "enqueue": "tsx src/cli.ts enqueue",
     "backfill": "tsx src/cli.ts backfill",
-    "migrate:pg": "tsx src/cli.ts migrate:pg"
+    "migrate:pg": "tsx src/cli.ts migrate:pg",
+    "score:selfcheck": "tsx src/analyze/score.selfcheck.ts"
   },
   "dependencies": {
     "openai": "^4.77.0",

@@ -1,10 +1,10 @@
 import { createServer } from "node:http";
 import { readFileSync, existsSync } from "node:fs";
 import { join, extname } from "node:path";
-import { PORT, PUBLIC_DIR } from "../config.ts";
+import { PORT, PUBLIC_DIR, ENABLE_ANALYZE_WORKER, WORKER_CONCURRENCY } from "../config.ts";
 import { analyzeSymbol, getAnalysis } from "../analyze/run.ts";
 import { refreshSymbol } from "../ingest/refresh.ts";
-import { getStock, stockToUiPayload } from "./v1/stocks.ts";
+import { getStock, listAvailableStocks, stockToUiPayload } from "./v1/stocks.ts";
 import { isPostgresEnabled, pingPostgres } from "../db/pg.ts";
 import { enqueueAnalyzeJob, getJob } from "../jobs/queue.ts";
 import { startAnalyzeWorker } from "../jobs/worker.ts";
@@ -36,12 +36,20 @@ function serveStatic(reqUrl: string, res: import("node:http").ServerResponse) {
     return;
   }
   const ext = extname(file);
-  res.writeHead(200, { "Content-Type": MIME[ext] ?? "application/octet-stream" });
+  const headers = { "Content-Type": MIME[ext] ?? "application/octet-stream" };
+  if (ext === ".html") headers["Cache-Control"] = "no-store";
+  res.writeHead(200, headers);
   res.end(readFileSync(file));
 }
 
 export function startServer(port = PORT) {
-  startAnalyzeWorker();
+  if (ENABLE_ANALYZE_WORKER && WORKER_CONCURRENCY > 0) {
+    startAnalyzeWorker();
+  } else {
+    console.log(
+      `[api] analyze worker disabled (ENABLE_ANALYZE_WORKER=${ENABLE_ANALYZE_WORKER} WORKER_CONCURRENCY=${WORKER_CONCURRENCY}) — run \`npm run worker\` separately`
+    );
+  }
 
   const server = createServer(async (req, res) => {
     try {
@@ -55,6 +63,12 @@ export function startServer(port = PORT) {
           "Access-Control-Allow-Headers": "Content-Type",
         });
         res.end();
+        return;
+      }
+
+      if (req.method === "GET" && pathname === "/v1/stocks") {
+        const symbols = await listAvailableStocks();
+        sendJson(res, 200, { symbols, count: symbols.length });
         return;
       }
 
@@ -154,7 +168,7 @@ export function startServer(port = PORT) {
   server.listen(port, () => {
     console.log(`[api] listening on http://localhost:${port}`);
     console.log(
-      `[api] GET /v1/stocks/:symbol  POST /refresh/:symbol  POST /analyze/:symbol[?async=1]  GET /v1/jobs/:id`
+      `[api] GET /v1/stocks  GET /v1/stocks/:symbol  POST /refresh/:symbol  POST /analyze/:symbol[?async=1]  GET /v1/jobs/:id`
     );
     console.log(`[api] USE_POSTGRES=${isPostgresEnabled()}`);
   });

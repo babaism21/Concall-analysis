@@ -1,6 +1,6 @@
 import {
   attachTranscriptAnchors,
-  repairFlatTimeline,
+  recomputePortfolioScores,
   type PortfolioJson,
 } from "../analyze/score.ts";
 import type { AnalysisRecord } from "../types.ts";
@@ -9,7 +9,7 @@ import type { StockResponse } from "./pg.ts";
 export function stockToAnalysisRecord(stock: StockResponse): AnalysisRecord | null {
   if (!stock.analysis) return null;
 
-  const portfolioJson = repairFlatTimeline(
+  const portfolioJson = recomputePortfolioScores(
     attachTranscriptAnchors(stock.analysis.portfolioJson, stock.transcripts)
   );
 
@@ -50,5 +50,5 @@ export function enrichPortfolioJson(
   portfolioJson: PortfolioJson,
   transcripts: StockResponse["transcripts"]
 ): PortfolioJson {
-  return repairFlatTimeline(attachTranscriptAnchors(portfolioJson, transcripts));
+  return recomputePortfolioScores(attachTranscriptAnchors(portfolioJson, transcripts));
 }

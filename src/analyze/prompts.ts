@@ -100,15 +100,10 @@ Return ONLY this JSON:
 }
 
 Include 6–12 cross-quarter commitments where prior guidance can be checked against later delivery.
-Include timeline entry for each call quarter listed above.
-
-BALANCED QUARTER SCORING (NiftyGPT-style) — timeline scores MUST differ across quarters:
-- Start from the provided callScore for that quarter, then adjust with evidence from later calls.
-- Deduct: major miss (>10% vs guidance) -2.0 to -2.5; minor miss -1.0 to -1.5; vague guidance -0.5 to -1.0;
-  mid-course guidance change -1.0; credibility/governance red flag -1.0 to -2.0.
-- Add: major beat +2.0 to +2.5; minor beat +1.0 to +1.5; proactive transparent update +0.5.
-- Do NOT assign the same score to every quarter. Typical healthy series varies by ≥1.5 points peak-to-trough.
-- Prefer one-decimal scores (e.g. 6.5, 7.8, 4.2). Notes must cite the concrete reason for the score.`;
+Include ONE timeline entry per unique call quarter (no duplicate quarter labels).
+Timeline scores are recomputed deterministically in code — your notes should explain the quarter,
+not invent spread. Prefer status honesty: use Under Execution / Early Execution for on-track open
+work; reserve Not Met for clear misses vs prior guidance.`
 }
 
 // Legacy bulk prompts kept for reference / fallback

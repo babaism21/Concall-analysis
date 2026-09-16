@@ -71,6 +71,7 @@ export function getDb(): DatabaseSync {
       job_type TEXT NOT NULL DEFAULT 'analyze',
       status TEXT NOT NULL DEFAULT 'queued',
       force INTEGER NOT NULL DEFAULT 0,
+      attempts INTEGER NOT NULL DEFAULT 0,
       error_message TEXT,
       result_json TEXT,
       created_at TEXT NOT NULL,
@@ -79,5 +80,12 @@ export function getDb(): DatabaseSync {
     );
     CREATE INDEX IF NOT EXISTS idx_analysis_jobs_status ON analysis_jobs(status);
   `);
+  // Additive migration for DBs created before attempts existed.
+  const cols = db
+    .prepare(`PRAGMA table_info(analysis_jobs)`)
+    .all() as Array<{ name: string }>;
+  if (!cols.some((c) => c.name === "attempts")) {
+    db.exec(`ALTER TABLE analysis_jobs ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0`);
+  }
   return db;
 }

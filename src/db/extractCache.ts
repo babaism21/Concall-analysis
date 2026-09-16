@@ -140,3 +140,31 @@ export function countMissingExtracts(
   }
   return missing;
 }
+
+/** Latest cached extract per (symbol, call_date, source_url) for cheap rescore. */
+export function listCallExtractsForSymbol(symbol: string): CachedCallExtract[] {
+  const sym = symbol.trim().toUpperCase();
+  const rows = getDb()
+    .prepare(
+      `SELECT extract_json as extractJson, call_date as callDate, created_at as createdAt
+       FROM call_extracts
+       WHERE symbol = ?
+       ORDER BY created_at DESC`
+    )
+    .all(sym) as Array<{ extractJson: string; callDate: string; createdAt: string }>;
+
+  const seen = new Set<string>();
+  const out: CachedCallExtract[] = [];
+  for (const row of rows) {
+    try {
+      const parsed = JSON.parse(row.extractJson) as CachedCallExtract;
+      const key = `${parsed.callDate || row.callDate}|${parsed.sourceUrl || ""}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(parsed);
+    } catch {
+      /* skip corrupt */
+    }
+  }
+  return out;
+}
