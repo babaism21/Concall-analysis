@@ -1,0 +1,52 @@
+{
+  "symbol": "WABAG",
+  "name": "Va Tech Wabag Ltd",
+  "asOf": "2026-10-22",
+  "price": 1772.2,
+  "marketCapCr": 11074.76,
+  "quarters": [
+    { "period": "Jun 2025", "sales": 734, "operatingProfit": 96, "otherIncome": 11, "pbt": 87, "netProfit": 66 },
+    { "period": "Sep 2025", "sales": 834, "operatingProfit": 89, "otherIncome": 43, "pbt": 111, "netProfit": 85 },
+    { "period": "Dec 2025", "sales": 961, "operatingProfit": 122, "otherIncome": 19, "pbt": 121, "netProfit": 91 },
+    { "period": "Mar 2026", "sales": 1414, "operatingProfit": 156, "otherIncome": 32, "pbt": 170, "netProfit": 128 },
+    { "period": "Jun 2026", "sales": 887, "operatingProfit": 80, "otherIncome": 58, "pbt": 118, "netProfit": 90 }
+  ],
+  "annual": [
+    { "period": "Mar 2023", "sales": 2960, "operatingProfit": 318, "otherIncome": -226, "pbt": 17, "netProfit": 11, "cfo": 85, "debtorDays": 186, "borrowings": 219 },
+    { "period": "Mar 2024", "sales": 2856, "operatingProfit": 366, "otherIncome": 43, "pbt": 330, "netProfit": 250, "cfo": 134, "debtorDays": 254, "borrowings": 289 },
+    { "period": "Mar 2025", "sales": 3294, "operatingProfit": 422, "otherIncome": 47, "pbt": 384, "netProfit": 295, "cfo": 355, "debtorDays": 223, "borrowings": 362 },
+    { "period": "Mar 2026", "sales": 3944, "operatingProfit": 478, "otherIncome": 90, "pbt": 489, "netProfit": 370, "cfo": 207, "debtorDays": 234, "borrowings": 228 },
+    { "period": "TTM", "sales": 4097, "operatingProfit": 446, "otherIncome": 152, "pbt": 520, "netProfit": 394 }
+  ],
+  "forwardEps": [
+    { "fiscalYear": "FY27", "eps": 74.49 },
+    { "fiscalYear": "FY28", "eps": 91.59 }
+  ],
+  "promoterHoldingPct": [
+    { "period": "Mar 2024", "pct": 19.13 },
+    { "period": "Jun 2024", "pct": 19.13 },
+    { "period": "Sep 2024", "pct": 19.13 },
+    { "period": "Dec 2024", "pct": 19.13 },
+    { "period": "Mar 2025", "pct": 19.13 },
+    { "period": "Jun 2025", "pct": 19.12 },
+    { "period": "Sep 2025", "pct": 19.1 },
+    { "period": "Dec 2025", "pct": 19.09 },
+    { "period": "Mar 2026", "pct": 19.09 },
+    { "period": "Jun 2026", "pct": 19.08 }
+  ],
+  "promoterPledgePct": 0,
+  "latestCash": { "period": "Jun 2026", "cashCr": 1074.4, "borrowingsCr": 116.3, "source": "Q1 FY27 investor presentation (excl. HAM projects)" },
+  "disclosedOneOffs": [
+    { "period": "Jun 2026", "amountCr": 36.8, "label": "Forex gain", "source": "Q1 FY27 investor presentation" }
+  ],
+  "segmentFacts": [
+    { "key": "orderbook_cr", "value": 19394, "label": "Total order book, ₹ cr (Jun 2026)", "source": "Q1 FY27 investor presentation" },
+    { "key": "orderbook_to_ttm_revenue_x", "value": 4.7, "label": "Order book ÷ trailing 12-month revenue, x", "source": "computed: 19394 ÷ 4097" },
+    { "key": "municipal_orderbook_pct", "value": 88, "label": "Municipal share of order book, %", "source": "Q1 FY27 investor presentation" },
+    { "key": "industrial_orderbook_pct", "value": 12, "label": "Industrial share of order book (incl. data centre, semiconductor, solar), %", "source": "Q1 FY27 investor presentation" },
+    { "key": "industrial_revenue_pct", "value": 25, "label": "Industrial share of Q1 FY27 revenue, %", "source": "Q1 FY27 investor presentation" },
+    { "key": "row_orderbook_pct", "value": 49, "label": "Overseas share of order book, %", "source": "Q1 FY27 investor presentation" },
+    { "key": "guided_revenue_cagr_low", "value": 15, "label": "Management guided revenue CAGR (3–5 yrs), low end, %", "source": "Q1 FY27 investor presentation" },
+    { "key": "guided_revenue_cagr_high", "value": 20, "label": "Management guided revenue CAGR (3–5 yrs), high end, %", "source": "Q1 FY27 investor presentation" }
+  ]
+}
